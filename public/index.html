@@ -1,5 +1,5 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07142b"><title>IPR GAMER · Bingo v5</title><link rel="stylesheet" href="/style.css?v=6.0.0"></head><body><div id="splash" class="splash-screen"><div class="splash-glow"></div><div class="splash-logo"><span>IPR</span><b>GAMER</b><strong>BINGO</strong></div><div class="splash-loader"><i></i></div></div>
-<div class="app-shell"><header class="topbar"><div class="brand"><div class="logo">IPR</div><div><h1>IPR GAMER</h1><small>Bingo multijugador · v6.0 Lanzamiento</small></div></div><div class="top-actions"><button id="soundToggle" class="sound-toggle" title="Activar o desactivar sonidos">🔊</button><div id="connection" class="status">Desconectado</div></div></header><main>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07142b"><title>IPR GAMER · Bingo v5</title><link rel="stylesheet" href="/style.css?v=6.0.3"></head><body><div id="splash" class="splash-screen"><div class="splash-glow"></div><div class="splash-logo"><span>IPR</span><b>GAMER</b><strong>BINGO</strong></div><div class="splash-loader"><i></i></div></div>
+<div class="app-shell"><header class="topbar"><div class="brand"><div class="logo">IPR</div><div><h1>IPR GAMER</h1><small>Bingo multijugador · v6.0.3 Audio familiar</small></div></div><div class="top-actions"><button id="soundToggle" class="sound-toggle" title="Activar o desactivar audio">🔊</button><button id="audioSettings" class="sound-toggle audio-settings-btn" title="Configurar música y voz">🎵</button><div id="connection" class="status">Desconectado</div></div></header><main>
 <section id="home" class="view active panel home-panel premium-home v6-home">
 <div class="premium-stage v6-stage" aria-label="Portada IPR Gamer Bingo">
   <div class="stage-overlay"></div>
@@ -67,4 +67,14 @@
 </div>
 <div id="creditPlayers" class="credit-player-list"></div>
 <h3>Movimientos</h3><div id="adminHistory" class="history-list"></div></div></div></div>
-<div id="countdown" class="countdown hidden"><div id="countdownNumber">3</div></div><div id="celebrationLayer" class="celebration-layer hidden"></div><div id="toast" class="toast"></div><script src="/app.js?v=6.0.2"></script></body></html>
+
+<div id="audioModal" class="modal" aria-hidden="true"><div class="modal-card audio-modal-card"><div class="modal-head"><div><h2>🎵 Audio IPR GAMER</h2><p>Estilo familiar, moderno y elegante.</p></div><button id="closeAudio" class="icon">✕</button></div>
+<div class="audio-option"><div><b>Música ambiental</b><small>Cambia entre portada, lobby y partida.</small></div><label class="switch"><input id="musicEnabled" type="checkbox"><span></span></label></div>
+<label class="audio-slider">Volumen de música <span id="musicValue">18%</span><input id="musicVolume" type="range" min="0" max="40" step="1"></label>
+<div class="audio-option"><div><b>Efectos del juego</b><small>Botones, bolillas y celebración.</small></div><label class="switch"><input id="effectsEnabled" type="checkbox"><span></span></label></div>
+<label class="audio-slider">Volumen de efectos <span id="effectsValue">55%</span><input id="effectsVolume" type="range" min="0" max="100" step="1"></label>
+<div class="audio-option"><div><b>Locutor de bolillas</b><small>Voz en español durante la partida.</small></div><label class="switch"><input id="voiceEnabled" type="checkbox"><span></span></label></div>
+<div class="audio-preview-actions"><button id="previewMusic" class="primary">▶ Probar ambiente</button><button id="previewWin" class="success">🏆 Probar victoria</button></div>
+<div class="notice">La música es original y se genera dentro de la aplicación. En celulares comienza después del primer toque por seguridad del navegador.</div>
+</div></div>
+<div id="countdown" class="countdown hidden"><div id="countdownNumber">3</div></div><div id="celebrationLayer" class="celebration-layer hidden"></div><div id="toast" class="toast"></div><script src="/app.js?v=6.0.3"></script></body></html>
