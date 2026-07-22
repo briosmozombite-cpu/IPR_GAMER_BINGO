@@ -9,7 +9,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const rooms = new Map();
 const ADMIN_KEY = process.env.ADMIN_KEY || 'IPR2026';
-const appTotals = {entryIncome:0,cardIncome:0,prizesPaid:0,gamesStarted:0,history:[]};
+const appTotals = {entryIncome:0,cardIncome:0,prizesPaid:0,gamesStarted:0,history:[],winners:[]};
 
 const money = n => Number(Number(n || 0).toFixed(2));
 const sendJson = (res, status, data) => {
@@ -61,9 +61,11 @@ function addAppMove(room,type,amount,detail){
   appTotals.history.unshift(item);appTotals.history=appTotals.history.slice(0,500);
 }
 function adminSnapshot(){
-  const players=[...rooms.values()].reduce((n,r)=>n+r.state.players.length,0);
-  const connected=[...rooms.values()].reduce((n,r)=>n+r.state.players.filter(p=>p.online).length,0);
-  return {...appTotals,net:money(appTotals.entryIncome+appTotals.cardIncome-appTotals.prizesPaid),activeRooms:rooms.size,players,connected,generatedAt:Date.now()};
+  const allPlayers=[...rooms.values()].flatMap(r=>r.state.players);
+  const players=allPlayers.length;
+  const connected=allPlayers.filter(p=>p.online).length;
+  const ranking=allPlayers.map(p=>({name:p.name,wins:p.stats.wins||0,won:money(p.stats.won||0),games:p.stats.games||0})).sort((a,b)=>b.wins-a.wins||b.won-a.won).slice(0,20);
+  return {...appTotals,ranking,net:money(appTotals.entryIncome+appTotals.cardIncome-appTotals.prizesPaid),activeRooms:rooms.size,players,connected,generatedAt:Date.now()};
 }
 function chargeEntry(room,p){
   p.balance=money(p.balance-0.20);p.stats.spent=money(p.stats.spent+0.20);
@@ -78,7 +80,8 @@ function newPlayer(name,host,startingBalance=20){
 function publicState(room,viewerId){
   const taken={};for(const p of room.state.players)for(const id of p.cardIds||[])taken[id]=p.id;
   const viewer=room.state.players.find(p=>p.id===viewerId);
-  return {...room.state,players:room.state.players.map(({sessionToken,history,stats,...p})=>p),takenCards:taken,myHistory:viewer?.history||[],myStats:viewer?.stats||{},appFinance:viewer?.host?room.state.appFinance:null};
+  const ranking=room.state.players.map(p=>({id:p.id,name:p.name,wins:p.stats.wins||0,won:money(p.stats.won||0),games:p.stats.games||0})).sort((a,b)=>b.wins-a.wins||b.won-a.won||a.name.localeCompare(b.name));
+  return {...room.state,players:room.state.players.map(({sessionToken,history,stats,...p})=>p),takenCards:taken,myHistory:viewer?.history||[],myStats:viewer?.stats||{},ranking,lastWinners:room.state.lastWinners||[],appFinance:viewer?.host?room.state.appFinance:null};
 }
 function emitOne(res,event,data){try{res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)}catch{}}
 function broadcast(room){for(const [id,res] of room.clients)emitOne(res,'state',publicState(room,id))}
@@ -91,6 +94,8 @@ function award(room,p,automatic=true){
   p.balance=money(p.balance+prize);p.stats.wins++;p.stats.won=money(p.stats.won+prize);if(apagon)p.stats.apagones++;
   addPlayerMove(p,apagon?'Premio APAGÓN':'Premio de bingo',prize,`Sala ${room.state.code} · Juego ${room.state.gameInCycle}`);
   room.state.appFinance.prizesPaid=money(room.state.appFinance.prizesPaid+prize);appTotals.prizesPaid=money(appTotals.prizesPaid+prize);addAppMove(room,'Premio pagado',-prize,p.name);recalc(room);
+  const winItem={id:crypto.randomUUID(),name:p.name,prize,apagon,game:room.state.gameInCycle,time:Date.now()};
+  room.state.lastWinners.unshift(winItem);room.state.lastWinners=room.state.lastWinners.slice(0,10);appTotals.winners.unshift({...winItem,room:room.state.code});appTotals.winners=appTotals.winners.slice(0,50);
   room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:apagon?`🔥 ${p.name} ganó el APAGÓN: ${prize.toFixed(2)} créditos`:`🏆 ${p.name} hizo BINGO y ganó 3 créditos`,time:Date.now()});
   broadcast(room);emit(room,'celebration',{name:p.name,prize,apagon,automatic});return true;
 }
@@ -126,7 +131,7 @@ function beginCountdown(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'4.3.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.0.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
@@ -134,7 +139,7 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==='POST'&&url.pathname==='/api/create'){
       const b=await readBody(req),name=String(b.name||'').trim();if(!name)return sendJson(res,400,{error:'Escribe tu nombre'});
       const code=roomCode(),p=newPlayer(name,true,b.startingBalance);
-      const room={hostId:p.id,clients:new Map(),timer:null,countdownTimer:null,state:{code,phase:'lobby',round:1,cycle:1,gameInCycle:1,apagonJackpot:0,minCardsForApagon:2,drawn:[],current:null,lastDrawAt:null,countdownEndsAt:null,winner:null,winnerId:null,rewardApplied:false,auto:false,speed:6,players:[p],chat:[],appFinance:{entryIncome:0,cardIncome:0,prizesPaid:0,net:0,history:[]}}};
+      const room={hostId:p.id,clients:new Map(),timer:null,countdownTimer:null,state:{code,phase:'lobby',round:1,cycle:1,gameInCycle:1,apagonJackpot:0,minCardsForApagon:2,drawn:[],current:null,lastDrawAt:null,countdownEndsAt:null,winner:null,winnerId:null,rewardApplied:false,auto:false,speed:6,players:[p],chat:[],lastWinners:[],appFinance:{entryIncome:0,cardIncome:0,prizesPaid:0,net:0,history:[]}}};
       chargeEntry(room,p);rooms.set(code,room);return sendJson(res,200,{code,playerId:p.id,sessionToken:p.sessionToken,state:publicState(room,p.id)});
     }
     if(req.method==='POST'&&url.pathname==='/api/join'){
@@ -218,7 +223,7 @@ const server=http.createServer(async(req,res)=>{
 });
 
 server.listen(PORT,HOST,()=>{
-  console.log(`\nIPR GAMER v4.3.2 activo en http://localhost:${PORT}`);
+  console.log(`\nIPR GAMER v5.0.0 activo en http://localhost:${PORT}`);
   for(const x of Object.values(os.networkInterfaces()).flat())if(x&&x.family==='IPv4'&&!x.internal)console.log(`Celulares: http://${x.address}:${PORT}`);
 });
 function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values())clearTimers(room);server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}
