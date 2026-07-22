@@ -134,7 +134,7 @@ function beginCountdown(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.2.1',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.2.2',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
