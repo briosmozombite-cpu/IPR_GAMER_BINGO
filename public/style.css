@@ -48,3 +48,23 @@ button.whatsapp{background:#25D366;color:#07140b;border-color:#25D366;font-weigh
 .pick.selected{border-color:#20c979;background:#effff7;box-shadow:0 0 0 3px rgba(32,201,121,.2),0 16px 34px rgba(0,0,0,.32)}.pick.selected .pick-state{background:#20c979;color:#fff}.pick.taken{opacity:.45;filter:grayscale(.7)}.pick.taken .pick-state{background:#7b8798;color:#fff}
 @media(max-width:850px){.card-picker{grid-template-columns:repeat(2,minmax(150px,1fr));gap:10px;padding:10px}.pick{padding:9px}.pick-top{align-items:flex-start;flex-direction:column;gap:4px}.mini-grid span{font-size:8px}.mini-letters b{font-size:10px;padding:4px 0}}
 @media(max-width:430px){.card-picker{grid-template-columns:1fr}.pick-top{flex-direction:row;align-items:center}.mini-grid span{font-size:11px}}
+
+/* v4.3.1: evita que las cartillas del selector se compriman y corten */
+#cardPicker.card-picker{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  align-content:start;
+  grid-auto-rows:max-content;
+}
+#cardPicker .pick{
+  display:block;
+  width:100%;
+  height:auto;
+  min-height:max-content;
+  overflow:hidden;
+  align-self:start;
+}
+#cardPicker .mini-grid{
+  grid-auto-rows:auto;
+}
