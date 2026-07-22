@@ -1,0 +1,12 @@
+{
+  "name": "ipr-gamer-bingo",
+  "version": "4.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "description": "Base oficial limpia de IPR GAMER Bingo multijugador"
+}
