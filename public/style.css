@@ -68,3 +68,11 @@ button.whatsapp{background:#25D366;color:#07140b;border-color:#25D366;font-weigh
 #cardPicker .mini-grid{
   grid-auto-rows:auto;
 }
+
+
+/* v4.3.2: selección propia visible y conservación de cartillas entre juegos */
+#cardPicker .pick.mine{border-color:#55b8ff;box-shadow:0 0 0 3px rgba(39,167,255,.20),0 12px 28px rgba(0,0,0,.28)}
+#cardPicker .pick.mine .pick-state{background:#1688ff;color:#fff}
+#cardPicker .pick.selected{border-color:#20c979!important;background:#effff7!important;box-shadow:0 0 0 4px rgba(32,201,121,.28),0 18px 38px rgba(0,0,0,.35)!important;transform:translateY(-2px)}
+#cardPicker .pick.selected:after{content:"✓ MÍA";position:absolute;right:8px;bottom:8px;padding:5px 8px;border-radius:999px;background:#0aa85f;color:#fff;font-size:10px;font-weight:1000;letter-spacing:.5px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+#cardPicker .pick.selected .pick-state{background:#0aa85f!important;color:#fff!important}

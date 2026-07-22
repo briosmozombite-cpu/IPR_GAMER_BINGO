@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v4.3.2
+- Las cartillas del propio jugador quedan claramente resaltadas con borde, etiqueta y marca verde.
+- Al preparar el siguiente juego se conservan las cartillas anteriores.
+- Cada jugador puede mantenerlas o abrir el selector y cambiarlas antes de confirmar.
+- Las cartillas no se cobran hasta que el jugador vuelve a confirmarlas para la nueva partida.
+
 ## v4.3.0
 - El anfitrión debe presionar **Siguiente juego** después de cada ganador.
 - Antes de ese reinicio, la selección de cartillas queda bloqueada con un mensaje claro.

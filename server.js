@@ -185,7 +185,7 @@ const server=http.createServer(async(req,res)=>{
           if(!isApagon(room)){for(const x of room.state.players){if(x.cardIds.length>=2&&x.apagonQualified)x.qualifyingGames++;else{x.apagonQualified=false;x.disqualificationReason='Jugó menos de 2 cartillas'}}room.state.gameInCycle++;}
           else{room.state.cycle++;room.state.gameInCycle=1;room.state.apagonJackpot=0;for(const x of room.state.players){x.apagonQualified=true;x.qualifyingGames=0;x.disqualificationReason=''}}
           clearTimers(room);room.state.phase='lobby';room.state.round++;room.state.drawn=[];room.state.current=null;room.state.countdownEndsAt=null;room.state.winner=null;room.state.winnerId=null;room.state.lastDrawAt=null;room.state.rewardApplied=false;room.state.auto=false;
-          for(const x of room.state.players){x.cardIds=[];x.ready=false;x.inGameView=false;x.cardCreditsPaid=0}broadcast(room);break;
+          for(const x of room.state.players){/* Conserva las cartillas del juego anterior como selección inicial. */x.ready=false;x.inGameView=false;x.cardCreditsPaid=0}broadcast(room);break;
         }
         case 'chat':{const text=String(b.text||'').trim().slice(0,180);if(!text)return sendJson(res,400,{error:'Escribe un mensaje'});room.state.chat.push({id:crypto.randomUUID(),kind:'user',name:p.name,text,time:Date.now()});room.state.chat=room.state.chat.slice(-60);broadcast(room);break}
         case 'reaction':{const emoji=String(b.emoji||'👏').slice(0,8);room.state.chat.push({id:crypto.randomUUID(),kind:'reaction',name:p.name,text:emoji,time:Date.now()});room.state.chat=room.state.chat.slice(-60);broadcast(room);emit(room,'reaction',{name:p.name,emoji});break}
@@ -218,7 +218,7 @@ const server=http.createServer(async(req,res)=>{
 });
 
 server.listen(PORT,HOST,()=>{
-  console.log(`\nIPR GAMER v4.2 activo en http://localhost:${PORT}`);
+  console.log(`\nIPR GAMER v4.3.2 activo en http://localhost:${PORT}`);
   for(const x of Object.values(os.networkInterfaces()).flat())if(x&&x.family==='IPv4'&&!x.internal)console.log(`Celulares: http://${x.address}:${PORT}`);
 });
 function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values())clearTimers(room);server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}
