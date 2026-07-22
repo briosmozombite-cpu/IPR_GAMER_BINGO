@@ -126,7 +126,7 @@ function beginCountdown(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'4.2.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'4.3.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
@@ -161,6 +161,7 @@ const server=http.createServer(async(req,res)=>{
       if(['start','draw','auto','reset','settings'].includes(b.type)&&!p.host)return sendJson(res,403,{error:'Solo el anfitrión puede hacer eso'});
       switch(b.type){
         case 'chooseCards':{
+          if(room.state.phase==='finished')return sendJson(res,409,{error:'El anfitrión debe presionar Siguiente juego antes de elegir nuevas cartillas'});
           if(room.state.phase!=='lobby')return sendJson(res,409,{error:'La partida ya comenzó'});
           const ids=[...new Set((b.cardIds||[]).map(Number))].filter(x=>x>=1&&x<=20).slice(0,8);if(ids.length<2)return sendJson(res,400,{error:'Debes elegir mínimo 2 cartillas'});
           for(const other of room.state.players)if(other.id!==p.id&&ids.some(id=>other.cardIds.includes(id)))return sendJson(res,409,{error:'Una cartilla ya fue elegida'});

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v4.3.0
+- El anfitrión debe presionar **Siguiente juego** después de cada ganador.
+- Antes de ese reinicio, la selección de cartillas queda bloqueada con un mensaje claro.
+- Al preparar el siguiente juego se limpian las cartillas anteriores y todos deben elegir nuevas.
+- Selector de cartillas rediseñado: colores B-I-N-G-O, números completos, estado disponible/seleccionada/ocupada y mejor vista en celular.
+
 ## v4.1.0
 - Cada jugador puede volver al lobby inmediatamente después de terminar una partida.
 - El jugador invitado también tiene disponible la opción de volver al lobby.
