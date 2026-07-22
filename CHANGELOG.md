@@ -1,3 +1,10 @@
+# v6.0.2 - Corrección del ingreso por enlace
+
+- Se corrigió el orden de inicialización del asistente de ingreso.
+- El parámetro `?sala=ABCDE` ahora se procesa sin error al abrir desde WhatsApp.
+- El código de sala se completa automáticamente y se conserva el flujo guiado.
+- Se actualizó la versión de caché de `app.js`.
+
 # v6.0.1 – Invitación directa a sala
 
 - El enlace compartido incluye el código de sala mediante `?sala=ABCDE`.

@@ -111,6 +111,7 @@ async function adjustCredits(action){
 $('openAdmin').onclick=()=>openAdminModal(false);$('openRoomAdmin').onclick=()=>openAdminModal(true);$('closeAdmin').onclick=closeAdminModal;$('loadAdmin').onclick=loadAdmin;$('creditRoom').oninput=()=>renderAdminAccounts({playerAccounts:adminAccounts});$('creditPlayer').onchange=()=>{const o=$('creditPlayer').selectedOptions[0];if(o?.dataset.room)$('creditRoom').value=o.dataset.room};$('addCredits').onclick=()=>adjustCredits('add');$('removeCredits').onclick=()=>adjustCredits('remove');$('resetCredits').onclick=()=>adjustCredits('reset');$('adminKey').onkeydown=e=>{if(e.key==='Enter')loadAdmin()};$('adminModal').onclick=e=>{if(e.target===$('adminModal'))closeAdminModal()};
 $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('iprSound',soundEnabled?'on':'off');updateSoundButton();tone(soundEnabled?880:240,.14,'sine',.06);toast(soundEnabled?'Sonidos activados':'Sonidos desactivados')};updateSoundButton();
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)});
+let entryMode='create';
 window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnValue=''}});
 (async()=>{
  const profile=getProfile();
@@ -140,7 +141,7 @@ window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnV
 })();
 // Portada y flujo guiado v6.0
 window.addEventListener('load',()=>setTimeout(()=>$('splash')?.classList.add('hide'),1250));
-let entryMode='create';
+
 function setWizardStep(step){
   [1,2,3].forEach(n=>{
     $('wizardStep'+n)?.classList.toggle('active',n===step);
