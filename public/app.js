@@ -23,7 +23,12 @@ async function resumeConnection(){if(resumeInProgress||!room||!sessionToken||!na
 function connect(){clearTimeout(reconnectTimer);if(events)events.close();$('connection').textContent='Conectando…';$('connection').classList.remove('online');events=new EventSource(`/api/events?code=${encodeURIComponent(room)}&playerId=${encodeURIComponent(playerId)}`);events.addEventListener('open',()=>{$('connection').textContent='Conectado';$('connection').classList.add('online')});events.addEventListener('state',e=>{state=JSON.parse(e.data);$('connection').textContent='Conectado';$('connection').classList.add('online');render()});events.addEventListener('celebration',e=>{const d=JSON.parse(e.data);showCelebration(d)});events.onerror=()=>{$('connection').textContent=navigator.onLine?'Reconectando…':'Sin internet';$('connection').classList.remove('online');clearTimeout(reconnectTimer);reconnectTimer=setTimeout(resumeConnection,3500)}}
 window.addEventListener('online',()=>{if(room){$('connection').textContent='Reconectando…';resumeConnection()}});window.addEventListener('offline',()=>{$('connection').textContent='Sin internet';$('connection').classList.remove('online')});
 async function enter(data){room=data.code;playerId=data.playerId;sessionToken=data.sessionToken;state=data.state;save();connect();requestWakeLock();render()}
-function inviteUrl(){return `${location.origin}${location.pathname}?sala=${room}`}
+function inviteUrl(){
+ const url=new URL(location.href);
+ url.search='';url.hash='';
+ url.searchParams.set('sala',String(room||'').trim().toUpperCase());
+ return url.toString();
+}
 function renderPlayers(target){target.innerHTML=state.players.map(p=>`<div class="player"><span>${p.host?'👑 ':''}${escapeHtml(p.name)} ${p.id===playerId?'(tú)':''}</span><span class="${p.ready?'ready':'waiting-text'}">${p.online?'●':'○'} ${p.ready?`${p.cardIds.length} cartillas`:'sin confirmar'}</span></div>`).join('')}
 function renderChat(target){target.innerHTML=state.chat.map(m=>`<div class="message ${m.kind==='system'?'system':''}"><b>${escapeHtml(m.name)}:</b> ${escapeHtml(m.text)}</div>`).join('');target.scrollTop=target.scrollHeight}
 function formatDate(ts){return new Date(ts).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
@@ -71,8 +76,8 @@ $('chooseCards').onclick=openCards;$('closeCards').onclick=closeCards;$('cardsMo
 $('confirmCards').onclick=async()=>{try{if(selected.size<2)return toast('Elige mínimo 2 cartillas');await api('/api/action',{code:room,playerId,type:'chooseCards',cardIds:[...selected]});closeCards();toast('Cartillas confirmadas')}catch(e){toast(e.message)}};
 $('backLobby').onclick=async()=>{try{await api('/api/action',{code:room,playerId,type:'setView',inGameView:false})}catch(e){toast(e.message)}};
 $('start').onclick=startGame;$('startFromGame').onclick=startGame;const prepareNext=async()=>{try{await api('/api/action',{code:room,playerId,type:'reset'});toast('Siguiente juego preparado: conserva tus cartillas o cámbialas')}catch(e){toast(e.message)}};$('nextLobby').onclick=prepareNext;$('toggleAuto').onclick=()=>api('/api/action',{code:room,playerId,type:'auto'}).catch(e=>toast(e.message));$('drawNow').onclick=()=>api('/api/action',{code:room,playerId,type:'draw'}).catch(e=>toast(e.message));$('next').onclick=prepareNext;
-function invitationText(){return `🎮 Te invito a jugar Bingo en IPR GAMER\nSala: ${room}\nEntra aquí: ${inviteUrl()}`}
-$('copyInvite').onclick=async()=>{try{if(navigator.share){await navigator.share({title:'IPR GAMER Bingo',text:invitationText(),url:inviteUrl()});toast('Invitación compartida')}else{await navigator.clipboard.writeText(invitationText());toast('Invitación copiada')}}catch(e){if(e?.name!=='AbortError')toast('No se pudo compartir')}};
+function invitationText(){return `🎮 Te invito a jugar Bingo en IPR GAMER\n\n🏠 Sala: ${room}\n👇 Abre este enlace, escribe tu nombre y entra directamente:\n${inviteUrl()}`}
+$('copyInvite').onclick=async()=>{try{if(navigator.share){await navigator.share({title:'IPR GAMER Bingo',text:invitationText()});toast('Invitación compartida')}else{await navigator.clipboard.writeText(invitationText());toast('Invitación copiada')}}catch(e){if(e?.name!=='AbortError')toast('No se pudo compartir')}};
 $('shareWhatsApp').onclick=()=>{const url=`https://wa.me/?text=${encodeURIComponent(invitationText())}`;window.open(url,'_blank','noopener,noreferrer')};
 $('copyCode').onclick=async()=>{await navigator.clipboard.writeText(room);toast('Código copiado')};
 $('sendLobby').onclick=()=>sendChat($('chatInputLobby')).catch(e=>toast(e.message));$('sendGame').onclick=()=>sendChat($('chatInputGame')).catch(e=>toast(e.message));$('chatInputLobby').onkeydown=e=>{if(e.key==='Enter')$('sendLobby').click()};$('chatInputGame').onkeydown=e=>{if(e.key==='Enter')$('sendGame').click()};document.querySelectorAll('[data-emoji]').forEach(b=>b.onclick=()=>api('/api/action',{code:room,playerId,type:'reaction',emoji:b.dataset.emoji}).catch(e=>toast(e.message)));
@@ -107,7 +112,32 @@ $('openAdmin').onclick=()=>openAdminModal(false);$('openRoomAdmin').onclick=()=>
 $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('iprSound',soundEnabled?'on':'off');updateSoundButton();tone(soundEnabled?880:240,.14,'sine',.06);toast(soundEnabled?'Sonidos activados':'Sonidos desactivados')};updateSoundButton();
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)});
 window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnValue=''}});
-(async()=>{const profile=getProfile();$('homeBalance').textContent=Number(profile.balance??20).toFixed(2);if(profile.name)$('name').value=profile.name;const invited=new URLSearchParams(location.search).get('sala');const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');if(invited){$('entrySection')?.classList.add('open');selectEntryMode('join');setWizardStep(2);$('joinCode').value=invited.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);$('name').value='';if(saved?.room&&saved.room!==$('joinCode').value)clearSession();setTimeout(()=>$('name').focus(),100)}else if(saved?.name)$('name').value=saved.name;if(!invited&&saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}show('home')})();
+(async()=>{
+ const profile=getProfile();
+ $('homeBalance').textContent=Number(profile.balance??20).toFixed(2);
+ if(profile.name)$('name').value=profile.name;
+ const params=new URLSearchParams(location.search);
+ const invitedRaw=params.get('sala')||params.get('room')||params.get('codigo')||'';
+ const invited=invitedRaw.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
+ const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');
+ show('home');
+ if(invited){
+  if(saved?.room&&saved.room!==invited)clearSession();
+  selectEntryMode('join');
+  $('joinCode').value=invited;
+  $('entrySection')?.classList.add('open');
+  setWizardStep(2);
+  // Conserva el nombre guardado para que el invitado solo confirme y entre.
+  $('name').value=profile.name||'';
+  setTimeout(()=>{
+   $('entrySection')?.scrollIntoView({behavior:'smooth',block:'start'});
+   (profile.name?$('wizardContinue2'):$('name'))?.focus();
+  },180);
+  return;
+ }
+ if(saved?.name)$('name').value=saved.name;
+ if(saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}
+})();
 // Portada y flujo guiado v6.0
 window.addEventListener('load',()=>setTimeout(()=>$('splash')?.classList.add('hide'),1250));
 let entryMode='create';
