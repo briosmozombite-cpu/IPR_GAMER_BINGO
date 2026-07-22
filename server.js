@@ -65,7 +65,10 @@ function adminSnapshot(){
   const players=allPlayers.length;
   const connected=allPlayers.filter(p=>p.online).length;
   const ranking=allPlayers.map(p=>({name:p.name,wins:p.stats.wins||0,won:money(p.stats.won||0),games:p.stats.games||0})).sort((a,b)=>b.wins-a.wins||b.won-a.won).slice(0,20);
-  return {...appTotals,ranking,net:money(appTotals.entryIncome+appTotals.cardIncome-appTotals.prizesPaid),activeRooms:rooms.size,players,connected,generatedAt:Date.now()};
+  const playerAccounts=[...rooms.values()].flatMap(room=>room.state.players.map(p=>({
+    id:p.id,room:room.state.code,name:p.name,balance:money(p.balance),online:Boolean(p.online),host:Boolean(p.host)
+  }))).sort((a,b)=>a.room.localeCompare(b.room)||a.name.localeCompare(b.name));
+  return {...appTotals,ranking,playerAccounts,net:money(appTotals.entryIncome+appTotals.cardIncome-appTotals.prizesPaid),activeRooms:rooms.size,players,connected,generatedAt:Date.now()};
 }
 function chargeEntry(room,p){
   p.balance=money(p.balance-0.20);p.stats.spent=money(p.stats.spent+0.20);
@@ -131,10 +134,33 @@ function beginCountdown(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.1.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.2.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
+    }
+    if(req.method==='POST'&&url.pathname==='/api/admin/credits'){
+      const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
+      const code=String(b.room||'').toUpperCase().trim(),room=rooms.get(code);
+      if(!room)return sendJson(res,404,{error:'Sala no encontrada'});
+      const p=room.state.players.find(x=>x.id===String(b.playerId||''));
+      if(!p)return sendJson(res,404,{error:'Jugador no encontrado'});
+      const action=String(b.action||'add');
+      const before=money(p.balance);
+      let delta=0;
+      if(action==='reset'){
+        const target=50;delta=money(target-before);p.balance=target;
+      }else{
+        const amount=money(Math.abs(Number(b.amount||0)));
+        if(!Number.isFinite(amount)||amount<=0)return sendJson(res,400,{error:'Ingresa un monto válido'});
+        delta=action==='remove'?-amount:amount;
+        p.balance=money(Math.max(0,p.balance+delta));delta=money(p.balance-before);
+      }
+      const label=action==='reset'?'Reinicio de saldo de prueba':delta>=0?'Recarga administrativa':'Ajuste administrativo';
+      addPlayerMove(p,label,delta,`Panel administrador · Sala ${code}`);
+      addAppMove(room,label,0,`${p.name}: ${before.toFixed(2)} → ${p.balance.toFixed(2)} créditos`);
+      broadcast(room);
+      return sendJson(res,200,{ok:true,player:{id:p.id,room:code,name:p.name,balance:money(p.balance)},snapshot:adminSnapshot()});
     }
     if(req.method==='POST'&&url.pathname==='/api/create'){
       const b=await readBody(req),name=String(b.name||'').trim();if(!name)return sendJson(res,400,{error:'Escribe tu nombre'});
@@ -223,7 +249,7 @@ const server=http.createServer(async(req,res)=>{
 });
 
 server.listen(PORT,HOST,()=>{
-  console.log(`\nIPR GAMER v5.1.0 activo en http://localhost:${PORT}`);
+  console.log(`\nIPR GAMER v5.2.0 activo en http://localhost:${PORT}`);
   for(const x of Object.values(os.networkInterfaces()).flat())if(x&&x.family==='IPv4'&&!x.internal)console.log(`Celulares: http://${x.address}:${PORT}`);
 });
 function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values())clearTimers(room);server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}

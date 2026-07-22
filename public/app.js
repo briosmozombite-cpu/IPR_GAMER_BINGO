@@ -80,15 +80,44 @@ $('leaveLobby').onclick=leaveRoomCompletely;$('leaveGame').onclick=()=>returnToR
 
 function openAdminModal(){$('adminModal').classList.add('show');$('adminModal').setAttribute('aria-hidden','false');document.body.style.overflow='hidden';setTimeout(()=>$('adminKey').focus(),80)}
 function closeAdminModal(){$('adminModal').classList.remove('show');$('adminModal').setAttribute('aria-hidden','true');document.body.style.overflow=''}
-async function loadAdmin(){try{const key=$('adminKey').value.trim();if(!key)return toast('Escribe la clave');const data=await api('/api/admin',{key},0);$('adminRooms').textContent=data.activeRooms||0;$('adminPlayers').textContent=data.players||0;$('adminConnected').textContent=data.connected||0;$('adminGames').textContent=data.gamesStarted||0;$('adminEntries').textContent=Number(data.entryIncome||0).toFixed(2);$('adminCards').textContent=Number(data.cardIncome||0).toFixed(2);$('adminPrizes').textContent=Number(data.prizesPaid||0).toFixed(2);$('adminNet').textContent=Number(data.net||0).toFixed(2);$('adminHistory').innerHTML=(data.history||[]).length?(data.history||[]).map(m=>`<div class="history-row"><div><b>${escapeHtml(m.type)}</b><small>${escapeHtml(m.detail||'')} · ${formatDate(m.time)}</small></div><strong class="${Number(m.amount)>=0?'gain':'expense'}">${Number(m.amount)>=0?'+':''}${Number(m.amount).toFixed(2)}</strong></div>`).join(''):'<div class="notice">Aún no hay movimientos.</div>';$('adminContent').classList.remove('hidden');toast('Panel actualizado')}catch(e){toast(e.message)}}
-$('openAdmin').onclick=openAdminModal;$('closeAdmin').onclick=closeAdminModal;$('loadAdmin').onclick=loadAdmin;$('adminKey').onkeydown=e=>{if(e.key==='Enter')loadAdmin()};$('adminModal').onclick=e=>{if(e.target===$('adminModal'))closeAdminModal()};
+let adminAccounts=[];
+function renderAdminAccounts(data){
+ adminAccounts=data.playerAccounts||[];
+ const roomFilter=$('creditRoom').value.trim().toUpperCase();
+ const filtered=roomFilter?adminAccounts.filter(p=>p.room===roomFilter):adminAccounts;
+ $('creditPlayer').innerHTML='<option value="">Selecciona un jugador</option>'+filtered.map(p=>`<option value="${p.id}" data-room="${p.room}">${escapeHtml(p.name)} · ${p.room} · ${Number(p.balance).toFixed(2)}</option>`).join('');
+ $('creditPlayers').innerHTML=filtered.length?filtered.map(p=>`<div class="credit-player-row"><div><b>${p.host?'👑 ':''}${escapeHtml(p.name)}</b><small>Sala ${p.room} · ${p.online?'Conectado':'Desconectado'}</small></div><strong>${Number(p.balance).toFixed(2)} créditos</strong></div>`).join(''):'<div class="notice">No hay jugadores en esa sala.</div>';
+}
+async function loadAdmin(){try{const key=$('adminKey').value.trim();if(!key)return toast('Escribe la clave');const data=await api('/api/admin',{key},0);$('adminRooms').textContent=data.activeRooms||0;$('adminPlayers').textContent=data.players||0;$('adminConnected').textContent=data.connected||0;$('adminGames').textContent=data.gamesStarted||0;$('adminEntries').textContent=Number(data.entryIncome||0).toFixed(2);$('adminCards').textContent=Number(data.cardIncome||0).toFixed(2);$('adminPrizes').textContent=Number(data.prizesPaid||0).toFixed(2);$('adminNet').textContent=Number(data.net||0).toFixed(2);$('adminHistory').innerHTML=(data.history||[]).length?(data.history||[]).map(m=>`<div class="history-row"><div><b>${escapeHtml(m.type)}</b><small>${escapeHtml(m.detail||'')} · ${formatDate(m.time)}</small></div><strong class="${Number(m.amount)>=0?'gain':'expense'}">${Number(m.amount)>=0?'+':''}${Number(m.amount).toFixed(2)}</strong></div>`).join(''):'<div class="notice">Aún no hay movimientos.</div>';renderAdminAccounts(data);$('adminContent').classList.remove('hidden');toast('Panel actualizado')}catch(e){toast(e.message)}}
+async function adjustCredits(action){
+ try{
+  const key=$('adminKey').value.trim(),playerId=$('creditPlayer').value;
+  const option=$('creditPlayer').selectedOptions[0],roomCode=(option?.dataset.room||$('creditRoom').value).trim().toUpperCase();
+  if(!key)return toast('Escribe la clave de administrador');
+  if(!roomCode)return toast('Escribe o selecciona una sala');
+  if(!playerId)return toast('Selecciona un jugador');
+  const amount=Number($('creditAmount').value||0);
+  if(action!=='reset'&&amount<=0)return toast('Ingresa un monto válido');
+  const data=await api('/api/admin/credits',{key,room:roomCode,playerId,action,amount},0);
+  toast(`${data.player.name}: saldo ${Number(data.player.balance).toFixed(2)} créditos`);
+  await loadAdmin();
+ }catch(e){toast(e.message)}
+}
+$('openAdmin').onclick=openAdminModal;$('closeAdmin').onclick=closeAdminModal;$('loadAdmin').onclick=loadAdmin;$('creditRoom').oninput=()=>renderAdminAccounts({playerAccounts:adminAccounts});$('creditPlayer').onchange=()=>{const o=$('creditPlayer').selectedOptions[0];if(o?.dataset.room)$('creditRoom').value=o.dataset.room};$('addCredits').onclick=()=>adjustCredits('add');$('removeCredits').onclick=()=>adjustCredits('remove');$('resetCredits').onclick=()=>adjustCredits('reset');$('adminKey').onkeydown=e=>{if(e.key==='Enter')loadAdmin()};$('adminModal').onclick=e=>{if(e.target===$('adminModal'))closeAdminModal()};
 $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('iprSound',soundEnabled?'on':'off');updateSoundButton();tone(soundEnabled?880:240,.14,'sine',.06);toast(soundEnabled?'Sonidos activados':'Sonidos desactivados')};updateSoundButton();
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)});
 window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnValue=''}});
-(async()=>{const profile=getProfile();$('homeBalance').textContent=Number(profile.balance??20).toFixed(2);if(profile.name)$('name').value=profile.name;const invited=new URLSearchParams(location.search).get('sala');const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');if(invited){$('joinCode').value=invited.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);$('name').value='';if(saved?.room&&saved.room!==$('joinCode').value)clearSession();setTimeout(()=>$('name').focus(),100)}else if(saved?.name)$('name').value=saved.name;if(!invited&&saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}show('home')})();
+(async()=>{const profile=getProfile();$('homeBalance').textContent=Number(profile.balance??20).toFixed(2);if(profile.name)$('name').value=profile.name;const invited=new URLSearchParams(location.search).get('sala');const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');if(invited){selectEntryMode('join');$('joinCode').value=invited.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);$('name').value='';if(saved?.room&&saved.room!==$('joinCode').value)clearSession();setTimeout(()=>$('name').focus(),100)}else if(saved?.name)$('name').value=saved.name;if(!invited&&saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}show('home')})();
 // Portada premium v5.1
 window.addEventListener('load',()=>setTimeout(()=>$('splash')?.classList.add('hide'),1450));
-const openEntry=(focusId='name')=>{const target=$('entrySection');target?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$((focusId))?.focus(),550)};
-$('heroPlay')?.addEventListener('click',()=>openEntry('name'));
-$('heroJoin')?.addEventListener('click',()=>openEntry('joinCode'));
+function selectEntryMode(mode){
+ const createMode=mode==='create';
+ $('tabCreate')?.classList.toggle('active',createMode);$('tabJoin')?.classList.toggle('active',!createMode);
+ $('createPane')?.classList.toggle('active',createMode);$('joinPane')?.classList.toggle('active',!createMode);
+}
+const openEntry=(mode='create')=>{selectEntryMode(mode);const target=$('entrySection');target?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{const name=$('name');if(!name?.value)name?.focus();else $(mode==='join'?'joinCode':'name')?.focus()},550)};
+$('tabCreate')?.addEventListener('click',()=>selectEntryMode('create'));
+$('tabJoin')?.addEventListener('click',()=>selectEntryMode('join'));
+$('heroPlay')?.addEventListener('click',()=>openEntry('create'));
+$('heroJoin')?.addEventListener('click',()=>openEntry('join'));
 $('heroSound')?.addEventListener('click',()=>$('soundToggle')?.click());
