@@ -1,6 +1,6 @@
 {
   "name": "ipr-gamer-bingo",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "private": true,
   "scripts": {
     "start": "node server.js"
@@ -8,5 +8,5 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "Base oficial limpia de IPR GAMER Bingo multijugador"
+  "description": "IPR GAMER Bingo v4.2: saldo permanente, siguiente juego estable, cartillas premium y panel administrador"
 }

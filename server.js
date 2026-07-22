@@ -8,6 +8,8 @@ const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const rooms = new Map();
+const ADMIN_KEY = process.env.ADMIN_KEY || 'IPR2026';
+const appTotals = {entryIncome:0,cardIncome:0,prizesPaid:0,gamesStarted:0,history:[]};
 
 const money = n => Number(Number(n || 0).toFixed(2));
 const sendJson = (res, status, data) => {
@@ -53,11 +55,20 @@ const isApagon=room=>room.state.gameInCycle===10;
 const eligiblePlayers=room=>room.state.players.filter(p=>!isApagon(room)||p.apagonQualified);
 function recalc(room){const f=room.state.appFinance;f.net=money(f.entryIncome+f.cardIncome-f.prizesPaid)}
 function addPlayerMove(p,type,amount,detail){p.history.unshift(movement(type,amount,detail));p.history=p.history.slice(0,100)}
-function addAppMove(room,type,amount,detail){room.state.appFinance.history.unshift(movement(type,amount,detail));room.state.appFinance.history=room.state.appFinance.history.slice(0,200)}
+function addAppMove(room,type,amount,detail){
+  const item=movement(type,amount,detail);
+  room.state.appFinance.history.unshift(item);room.state.appFinance.history=room.state.appFinance.history.slice(0,200);
+  appTotals.history.unshift(item);appTotals.history=appTotals.history.slice(0,500);
+}
+function adminSnapshot(){
+  const players=[...rooms.values()].reduce((n,r)=>n+r.state.players.length,0);
+  const connected=[...rooms.values()].reduce((n,r)=>n+r.state.players.filter(p=>p.online).length,0);
+  return {...appTotals,net:money(appTotals.entryIncome+appTotals.cardIncome-appTotals.prizesPaid),activeRooms:rooms.size,players,connected,generatedAt:Date.now()};
+}
 function chargeEntry(room,p){
   p.balance=money(p.balance-0.20);p.stats.spent=money(p.stats.spent+0.20);
   addPlayerMove(p,'Inscripción de 10 juegos',-0.20,`Sala ${room.state.code}`);
-  room.state.appFinance.entryIncome=money(room.state.appFinance.entryIncome+0.20);
+  room.state.appFinance.entryIncome=money(room.state.appFinance.entryIncome+0.20);appTotals.entryIncome=money(appTotals.entryIncome+0.20);
   addAppMove(room,'Inscripción',0.20,`${p.name} · Sala ${room.state.code}`);recalc(room);
 }
 function newPlayer(name,host,startingBalance=20){
@@ -79,7 +90,7 @@ function award(room,p,automatic=true){
   clearTimers(room);room.state.phase='finished';room.state.winner=p.name;room.state.winnerId=p.id;room.state.auto=false;room.state.rewardApplied=true;
   p.balance=money(p.balance+prize);p.stats.wins++;p.stats.won=money(p.stats.won+prize);if(apagon)p.stats.apagones++;
   addPlayerMove(p,apagon?'Premio APAGÓN':'Premio de bingo',prize,`Sala ${room.state.code} · Juego ${room.state.gameInCycle}`);
-  room.state.appFinance.prizesPaid=money(room.state.appFinance.prizesPaid+prize);addAppMove(room,'Premio pagado',-prize,p.name);recalc(room);
+  room.state.appFinance.prizesPaid=money(room.state.appFinance.prizesPaid+prize);appTotals.prizesPaid=money(appTotals.prizesPaid+prize);addAppMove(room,'Premio pagado',-prize,p.name);recalc(room);
   room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:apagon?`🔥 ${p.name} ganó el APAGÓN: ${prize.toFixed(2)} créditos`:`🏆 ${p.name} hizo BINGO y ganó 3 créditos`,time:Date.now()});
   broadcast(room);emit(room,'celebration',{name:p.name,prize,apagon,automatic});return true;
 }
@@ -104,7 +115,7 @@ function setAuto(room){
 function beginCountdown(room){
   clearTimers(room);
   room.state.phase='countdown';room.state.countdownEndsAt=Date.now()+4000;room.state.drawn=[];room.state.current=null;room.state.winner=null;room.state.winnerId=null;room.state.rewardApplied=false;room.state.auto=false;
-  for(const p of room.state.players)p.stats.games++;
+  for(const p of room.state.players)p.stats.games++;appTotals.gamesStarted++;
   broadcast(room);
   room.countdownTimer=setTimeout(()=>{
     if(room.state.phase!=='countdown')return;
@@ -115,7 +126,11 @@ function beginCountdown(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'4.1.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'4.2.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='POST'&&url.pathname==='/api/admin'){
+      const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
+      return sendJson(res,200,adminSnapshot());
+    }
     if(req.method==='POST'&&url.pathname==='/api/create'){
       const b=await readBody(req),name=String(b.name||'').trim();if(!name)return sendJson(res,400,{error:'Escribe tu nombre'});
       const code=roomCode(),p=newPlayer(name,true,b.startingBalance);
@@ -150,7 +165,7 @@ const server=http.createServer(async(req,res)=>{
           const ids=[...new Set((b.cardIds||[]).map(Number))].filter(x=>x>=1&&x<=20).slice(0,8);if(ids.length<2)return sendJson(res,400,{error:'Debes elegir mínimo 2 cartillas'});
           for(const other of room.state.players)if(other.id!==p.id&&ids.some(id=>other.cardIds.includes(id)))return sendJson(res,409,{error:'Una cartilla ya fue elegida'});
           const extra=Math.max(0,ids.length-p.cardCreditsPaid);if(p.balance<extra)return sendJson(res,409,{error:`Saldo insuficiente: necesitas ${extra} crédito(s)`});
-          if(extra){p.balance=money(p.balance-extra);p.cardCreditsPaid+=extra;p.stats.spent=money(p.stats.spent+extra);addPlayerMove(p,'Compra de cartillas',-extra,`${extra} cartilla(s)`);const jack=money(extra*0.20),platform=money(extra-jack);room.state.apagonJackpot=money(room.state.apagonJackpot+jack);room.state.appFinance.cardIncome=money(room.state.appFinance.cardIncome+platform);addAppMove(room,'Venta de cartillas',platform,p.name);recalc(room)}
+          if(extra){p.balance=money(p.balance-extra);p.cardCreditsPaid+=extra;p.stats.spent=money(p.stats.spent+extra);addPlayerMove(p,'Compra de cartillas',-extra,`${extra} cartilla(s)`);const jack=money(extra*0.20),platform=money(extra-jack);room.state.apagonJackpot=money(room.state.apagonJackpot+jack);room.state.appFinance.cardIncome=money(room.state.appFinance.cardIncome+platform);appTotals.cardIncome=money(appTotals.cardIncome+platform);addAppMove(room,'Venta de cartillas',platform,p.name);recalc(room)}
           p.cardIds=ids;p.ready=true;p.inGameView=true;broadcast(room);break;
         }
         case 'setView':p.inGameView=Boolean(b.inGameView);broadcast(room);break;
@@ -168,7 +183,7 @@ const server=http.createServer(async(req,res)=>{
           if(room.state.phase!=='finished')return sendJson(res,409,{error:'El juego todavía no terminó'});
           if(!isApagon(room)){for(const x of room.state.players){if(x.cardIds.length>=2&&x.apagonQualified)x.qualifyingGames++;else{x.apagonQualified=false;x.disqualificationReason='Jugó menos de 2 cartillas'}}room.state.gameInCycle++;}
           else{room.state.cycle++;room.state.gameInCycle=1;room.state.apagonJackpot=0;for(const x of room.state.players){x.apagonQualified=true;x.qualifyingGames=0;x.disqualificationReason=''}}
-          clearTimers(room);room.state.phase='lobby';room.state.round++;room.state.drawn=[];room.state.current=null;room.state.countdownEndsAt=null;room.state.winner=null;room.state.rewardApplied=false;room.state.auto=false;
+          clearTimers(room);room.state.phase='lobby';room.state.round++;room.state.drawn=[];room.state.current=null;room.state.countdownEndsAt=null;room.state.winner=null;room.state.winnerId=null;room.state.lastDrawAt=null;room.state.rewardApplied=false;room.state.auto=false;
           for(const x of room.state.players){x.cardIds=[];x.ready=false;x.inGameView=false;x.cardCreditsPaid=0}broadcast(room);break;
         }
         case 'chat':{const text=String(b.text||'').trim().slice(0,180);if(!text)return sendJson(res,400,{error:'Escribe un mensaje'});room.state.chat.push({id:crypto.randomUUID(),kind:'user',name:p.name,text,time:Date.now()});room.state.chat=room.state.chat.slice(-60);broadcast(room);break}
@@ -202,7 +217,7 @@ const server=http.createServer(async(req,res)=>{
 });
 
 server.listen(PORT,HOST,()=>{
-  console.log(`\nIPR GAMER v4.1 activo en http://localhost:${PORT}`);
+  console.log(`\nIPR GAMER v4.2 activo en http://localhost:${PORT}`);
   for(const x of Object.values(os.networkInterfaces()).flat())if(x&&x.family==='IPv4'&&!x.internal)console.log(`Celulares: http://${x.address}:${PORT}`);
 });
 function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values())clearTimers(room);server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}

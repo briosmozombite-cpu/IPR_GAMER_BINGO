@@ -12,7 +12,7 @@
 <header class="topbar">
   <div class="brand">
     <div class="logo">IPR</div>
-    <div><h1>IPR GAMER</h1><small>Bingo multijugador · v4.1</small></div>
+    <div><h1>IPR GAMER</h1><small>Bingo multijugador · v4.2</small></div>
   </div>
   <div class="top-status"><div id="connection" class="status">Desconectado</div></div>
 </header>
@@ -35,7 +35,7 @@
     </div>
     <div class="divider"><span>o</span></div>
     <button id="create" class="secondary wide">Crear una sala nueva</button>
-    <p class="small-note">Cada jugador debe elegir mínimo 2 cartillas.</p>
+    <p class="small-note">Cada jugador debe elegir mínimo 2 cartillas.</p><button id="openAdmin" class="admin-link">🔐 Panel del administrador</button>
   </div>
 </section>
 
@@ -74,7 +74,7 @@
 </section>
 
 <section id="game" class="view panel game-panel">
-  <div class="room-head game-head"><div><span class="muted">SALA</span><strong id="gameRoom">-----</strong></div><div><span class="muted">JUEGO</span><strong><span id="gameNo">1</span>/10</strong></div></div>
+  <div class="room-head game-head"><div><span class="muted">SALA</span><strong id="gameRoom">-----</strong></div><div class="wallet"><span class="muted">SALDO</span><strong><span id="gameBalance">0.00</span> créditos</strong></div><div><span class="muted">JUEGO</span><strong><span id="gameNo">1</span>/10</strong></div></div>
   <div id="waiting" class="waiting hidden"><div><b>✅ Cartillas confirmadas</b><div class="muted">Esperando que el anfitrión inicie el juego.</div></div><div class="actions"><button id="startFromGame" class="success hidden">Iniciar juego</button><button id="backLobby" class="secondary">Volver al lobby</button></div></div>
   <div class="game-grid">
     <div class="game-main">
@@ -93,10 +93,12 @@
   <button id="leaveGame" class="danger ghost wide">Abandonar partida y volver al lobby</button>
 </section>
 
-<section id="result" class="view panel result center"><div class="trophy">🏆</div><h2>Resultado</h2><div id="winner" class="winner">—</div><button id="next" class="success hidden">Siguiente juego</button><button id="leaveResult" class="primary">Volver al lobby de la sala</button><p class="small-note">Cada jugador puede volver al lobby sin esperar al anfitrión.</p></section>
+<section id="result" class="view panel result center"><div class="result-wallet">Saldo: <strong><span id="resultBalance">0.00</span> créditos</strong></div><div class="trophy">🏆</div><h2>Resultado</h2><div id="winner" class="winner">—</div><button id="next" class="success hidden">Siguiente juego</button><button id="leaveResult" class="primary">Volver al lobby de la sala</button><p class="small-note">Cada jugador puede volver al lobby sin esperar al anfitrión.</p></section>
 </main>
 </div>
 <div id="cardsModal" class="modal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Elige tus cartillas</h2><p>Mínimo 2, máximo 8</p></div><button id="closeCards" class="icon">✕</button></div><div id="cardPicker" class="card-picker"></div><div class="modal-foot"><strong>Seleccionadas: <span id="selectedCount">0</span></strong><button id="confirmCards" class="primary">Confirmar cartillas</button></div></div></div>
+
+<div id="adminModal" class="modal" aria-hidden="true"><div class="modal-card admin-modal-card"><div class="modal-head"><div><h2>Panel IPR GAMER</h2><p>Información privada de la plataforma</p></div><button id="closeAdmin" class="icon">✕</button></div><div class="admin-login"><label>Clave de administrador<input id="adminKey" type="password" autocomplete="current-password" placeholder="Clave"></label><button id="loadAdmin" class="primary">Ingresar</button></div><div id="adminContent" class="admin-content hidden"><div class="admin-grid"><div class="stat-card"><span>Salas activas</span><strong id="adminRooms">0</strong></div><div class="stat-card"><span>Jugadores</span><strong id="adminPlayers">0</strong></div><div class="stat-card"><span>Conectados</span><strong id="adminConnected">0</strong></div><div class="stat-card"><span>Juegos iniciados</span><strong id="adminGames">0</strong></div><div class="stat-card"><span>Inscripciones</span><strong><span id="adminEntries">0.00</span> cr.</strong></div><div class="stat-card"><span>Venta cartillas</span><strong><span id="adminCards">0.00</span> cr.</strong></div><div class="stat-card"><span>Premios pagados</span><strong><span id="adminPrizes">0.00</span> cr.</strong></div><div class="stat-card admin-profit"><span>Ganancia neta</span><strong><span id="adminNet">0.00</span> cr.</strong></div></div><p class="small-note">Totales acumulados desde el último reinicio del servidor.</p><div id="adminHistory" class="history-list"></div></div></div></div>
 <div id="countdown" class="countdown hidden"><div id="countdownNumber">3</div></div>
 <div id="toast" class="toast"></div>
 <script src="/app.js"></script>

@@ -17,3 +17,11 @@
 - Salir completamente queda como acción separada.
 - Compartir invitación incluye opción directa por WhatsApp.
 - Se actualizan versión, documentación y configuración de publicación.
+
+
+## v4.2.0
+- Saldo visible en lobby, juego y resultado.
+- Reinicio robusto para el segundo y siguientes juegos.
+- Cartillas premium con colores B-I-N-G-O y marcado más visible.
+- Panel privado del administrador con salas, jugadores, ingresos, premios y utilidad.
+- Clave configurable mediante `ADMIN_KEY` (valor de prueba: `IPR2026`).
