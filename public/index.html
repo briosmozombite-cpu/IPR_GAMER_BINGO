@@ -1,39 +1,52 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07142b"><title>IPR GAMER · Bingo v5</title><link rel="stylesheet" href="/style.css?v=5.2.0"></head><body><div id="splash" class="splash-screen"><div class="splash-glow"></div><div class="splash-logo"><span>IPR</span><b>GAMER</b><strong>BINGO</strong></div><div class="splash-loader"><i></i></div></div>
-<div class="app-shell"><header class="topbar"><div class="brand"><div class="logo">IPR</div><div><h1>IPR GAMER</h1><small>Bingo multijugador · v5.2 Premium</small></div></div><div class="top-actions"><button id="soundToggle" class="sound-toggle" title="Activar o desactivar sonidos">🔊</button><div id="connection" class="status">Desconectado</div></div></header><main>
-<section id="home" class="view active panel home-panel premium-home">
-<div class="premium-stage" aria-label="Portada IPR Gamer Bingo">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07142b"><title>IPR GAMER · Bingo v5</title><link rel="stylesheet" href="/style.css?v=6.0.0"></head><body><div id="splash" class="splash-screen"><div class="splash-glow"></div><div class="splash-logo"><span>IPR</span><b>GAMER</b><strong>BINGO</strong></div><div class="splash-loader"><i></i></div></div>
+<div class="app-shell"><header class="topbar"><div class="brand"><div class="logo">IPR</div><div><h1>IPR GAMER</h1><small>Bingo multijugador · v6.0 Lanzamiento</small></div></div><div class="top-actions"><button id="soundToggle" class="sound-toggle" title="Activar o desactivar sonidos">🔊</button><div id="connection" class="status">Desconectado</div></div></header><main>
+<section id="home" class="view active panel home-panel premium-home v6-home">
+<div class="premium-stage v6-stage" aria-label="Portada IPR Gamer Bingo">
   <div class="stage-overlay"></div>
-  <div class="stage-top"><div class="mini-brand">IPR GAMER <span>v5.2</span></div><button id="heroSound" class="hero-icon" aria-label="Sonido">🔊</button></div>
-  <div class="stage-content">
-    <div class="stage-kicker">DIVERSIÓN EN TIEMPO REAL</div>
+  <div class="stage-top"><div class="mini-brand">IPR GAMER <span>v6.0</span></div><button id="heroSound" class="hero-icon" aria-label="Sonido">🔊</button></div>
+  <div class="stage-content v6-stage-content">
+    <div class="stage-kicker">EL BINGO QUE REÚNE A TODOS</div>
     <div class="stage-logo"><span>IPR</span><b>GAMER</b><strong>BINGO</strong></div>
-    <p>Juega con tu familia, conserva tus cartillas y vive cada bolilla como en una sala profesional.</p>
-    <button id="heroPlay" class="mega-play"><span>▶</span> JUGAR AHORA</button>
-    <button id="heroJoin" class="mega-join">👥 UNIRSE A UNA SALA</button>
+    <p>Crea una sala, invita a tu familia y disfruta una experiencia clara, rápida y profesional.</p>
+    <button id="heroPlay" class="mega-play"><span>▶</span> JUGAR</button>
+    <button id="heroJoin" class="mega-join">Tengo un código de sala</button>
   </div>
-  
+  <div class="v6-trust"><span>⚡ Tiempo real</span><span>📱 Celular y PC</span><span>🔒 Sala privada</span></div>
 </div>
-<div id="entrySection" class="entry-section">
-  <div class="entry-card entry-card-clean">
+<div id="entrySection" class="entry-section v6-entry hidden-flow">
+  <div class="entry-card v6-wizard">
+    <div class="wizard-progress"><span class="active" data-step-dot="1">1</span><i></i><span data-step-dot="2">2</span><i></i><span data-step-dot="3">3</span></div>
     <div class="entry-heading">
-      <div><span class="eyebrow">EMPIEZA A JUGAR</span><h3>¿Qué deseas hacer?</h3></div>
+      <div><span class="eyebrow">INGRESO ORDENADO</span><h3 id="wizardTitle">¿Qué deseas hacer?</h3></div>
       <div class="platform-wallet"><span>Tu saldo</span><strong><span id="homeBalance">20.00</span> créditos</strong></div>
     </div>
-    <div class="entry-tabs" role="tablist">
-      <button id="tabCreate" class="entry-tab active" type="button">🎮 Crear sala</button>
-      <button id="tabJoin" class="entry-tab" type="button">👥 Unirme a sala</button>
+
+    <div id="wizardStep1" class="wizard-step active">
+      <div class="mode-grid">
+        <button id="tabCreate" class="mode-card active" type="button"><span class="mode-icon">🎮</span><b>Crear una sala</b><small>Serás el anfitrión y podrás invitar a otros jugadores.</small></button>
+        <button id="tabJoin" class="mode-card" type="button"><span class="mode-icon">👥</span><b>Unirme a una sala</b><small>Ingresa usando el código que te compartieron.</small></button>
+      </div>
+      <button id="wizardContinue1" class="primary wide">Continuar</button>
     </div>
-    <label>Nombre o apodo<input id="name" maxlength="24" autocomplete="off" placeholder="Escribe tu nombre"></label>
-    <div id="createPane" class="entry-pane active">
-      <p>Crearás una sala nueva y recibirás un código para invitar a los demás jugadores.</p>
-      <button id="create" class="primary wide">Crear sala y continuar</button>
+
+    <div id="wizardStep2" class="wizard-step">
+      <button id="wizardBack1" class="wizard-back" type="button">← Cambiar opción</button>
+      <label>¿Cómo deseas que te llamen?<input id="name" maxlength="24" autocomplete="off" placeholder="Escribe tu nombre o apodo"></label>
+      <div id="joinCodeWrap" class="hidden"><label>Código de sala<input id="joinCode" maxlength="5" autocomplete="off" placeholder="ABCDE"></label></div>
+      <button id="wizardContinue2" class="primary wide">Revisar y entrar</button>
     </div>
-    <div id="joinPane" class="entry-pane">
-      <label>Código de sala<input id="joinCode" maxlength="5" autocomplete="off" placeholder="ABCDE"></label>
-      <button id="join" class="primary wide">Unirme a la sala</button>
+
+    <div id="wizardStep3" class="wizard-step">
+      <button id="wizardBack2" class="wizard-back" type="button">← Corregir datos</button>
+      <div class="summary-card">
+        <span id="summaryIcon">🎮</span>
+        <div><small>Vas a</small><b id="summaryAction">Crear una sala nueva</b><p id="summaryDetail">Como anfitrión podrás compartir el código con los jugadores.</p></div>
+      </div>
+      <div id="createPane" class="entry-pane active"><button id="create" class="primary wide">Crear sala y entrar</button></div>
+      <div id="joinPane" class="entry-pane"><button id="join" class="primary wide">Entrar a la sala</button></div>
     </div>
-    <button id="openAdmin" class="admin-link">🔐 Panel administrador</button>
-    <p class="small-note">Cada jugador debe elegir mínimo 2 cartillas.</p>
+
+    <div class="wizard-footer"><button id="openAdmin" class="admin-link">🔐 Administración</button><span>Para jugar debes elegir mínimo 2 cartillas.</span></div>
   </div>
 </div></section>
 <section id="lobby" class="view panel"><div class="room-head"><div><span class="muted">SALA</span><strong id="roomCode">-----</strong></div><div class="wallet"><span class="muted">SALDO</span><strong><span id="balance">0.00</span> créditos</strong></div></div><div class="player-dashboard"><div><span>👤 Jugador</span><strong id="dashName">—</strong></div><div><span>🏆 Victorias</span><strong id="dashWins">0</strong></div><div><span>🎫 Cartillas</span><strong id="dashCards">0</strong></div><div><span>💰 Ganado</span><strong id="dashWon">0.00</strong></div></div><div class="invite-card"><div><b>Invita a los jugadores</b><p>Comparte el enlace o el código de la sala.</p></div><input id="inviteLink" readonly><div class="invite-actions"><button id="copyInvite" class="primary">📤 Compartir</button><button id="shareWhatsApp" class="whatsapp">💬 WhatsApp</button><button id="copyCode" class="secondary">📋 Código</button></div></div><div class="section-title"><div><h3>Jugadores</h3><p>Todos deben confirmar mínimo 2 cartillas.</p></div></div><div id="players" class="players"></div><div class="lobby-grid"><div class="card-block"><h3>Tus cartillas</h3><p>Elige entre 20 cartillas. Mínimo 2 y máximo 8.</p><button id="chooseCards" class="primary wide">Elegir cartillas</button><div id="cardsStatus" class="cards-status"></div><button id="start" class="success wide hidden">Iniciar juego</button><div id="hostHelp" class="notice hidden">👑 Eres el anfitrión. Inicia cuando todos estén listos.</div><button id="openRoomAdmin" class="secondary wide hidden">💳 Administrar créditos de esta sala</button><button id="nextLobby" class="success wide hidden">Preparar siguiente juego</button><button id="leaveLobby" class="danger ghost wide">Salir completamente de la sala</button></div><div class="card-block chat-card"><h3>Chat de sala</h3><div id="chatLobby" class="chat-list"></div><div class="chat-row"><input id="chatInputLobby" maxlength="180" placeholder="Escribe un mensaje"><button id="sendLobby">Enviar</button></div></div></div><div class="premium-grid"><div class="history-panel"><h3>🏆 Ranking de la sala</h3><div id="roomRanking" class="ranking-list"></div></div><div class="history-panel"><h3>🎉 Últimos ganadores</h3><div id="lastWinners" class="ranking-list"></div></div></div><div class="history-panel"><h3>Tu historial</h3><div class="stats-grid"><div class="stat-card"><span>Juegos</span><strong id="statGames">0</strong></div><div class="stat-card"><span>Victorias</span><strong id="statWins">0</strong></div><div class="stat-card"><span>Ganado</span><strong id="statWon">0.00</strong></div><div class="stat-card"><span>Gastado</span><strong id="statSpent">0.00</strong></div></div><div id="playerHistory" class="history-list"></div></div></section>

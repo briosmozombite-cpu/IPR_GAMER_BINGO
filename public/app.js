@@ -107,17 +107,44 @@ $('openAdmin').onclick=()=>openAdminModal(false);$('openRoomAdmin').onclick=()=>
 $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('iprSound',soundEnabled?'on':'off');updateSoundButton();tone(soundEnabled?880:240,.14,'sine',.06);toast(soundEnabled?'Sonidos activados':'Sonidos desactivados')};updateSoundButton();
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)});
 window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnValue=''}});
-(async()=>{const profile=getProfile();$('homeBalance').textContent=Number(profile.balance??20).toFixed(2);if(profile.name)$('name').value=profile.name;const invited=new URLSearchParams(location.search).get('sala');const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');if(invited){selectEntryMode('join');$('joinCode').value=invited.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);$('name').value='';if(saved?.room&&saved.room!==$('joinCode').value)clearSession();setTimeout(()=>$('name').focus(),100)}else if(saved?.name)$('name').value=saved.name;if(!invited&&saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}show('home')})();
-// Portada premium v5.1
-window.addEventListener('load',()=>setTimeout(()=>$('splash')?.classList.add('hide'),1450));
+(async()=>{const profile=getProfile();$('homeBalance').textContent=Number(profile.balance??20).toFixed(2);if(profile.name)$('name').value=profile.name;const invited=new URLSearchParams(location.search).get('sala');const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');if(invited){$('entrySection')?.classList.add('open');selectEntryMode('join');setWizardStep(2);$('joinCode').value=invited.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);$('name').value='';if(saved?.room&&saved.room!==$('joinCode').value)clearSession();setTimeout(()=>$('name').focus(),100)}else if(saved?.name)$('name').value=saved.name;if(!invited&&saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}show('home')})();
+// Portada y flujo guiado v6.0
+window.addEventListener('load',()=>setTimeout(()=>$('splash')?.classList.add('hide'),1250));
+let entryMode='create';
+function setWizardStep(step){
+  [1,2,3].forEach(n=>{
+    $('wizardStep'+n)?.classList.toggle('active',n===step);
+    const dot=document.querySelector(`[data-step-dot="${n}"]`);
+    dot?.classList.toggle('active',n===step);dot?.classList.toggle('done',n<step);
+  });
+  const titles={1:'¿Qué deseas hacer?',2:entryMode==='create'?'¿Quién está creando la sala?':'Ingresa tus datos',3:'Todo listo para entrar'};
+  if($('wizardTitle'))$('wizardTitle').textContent=titles[step];
+  setTimeout(()=>{if(step===2)$('name')?.focus()},120);
+}
 function selectEntryMode(mode){
- const createMode=mode==='create';
+ entryMode=mode==='join'?'join':'create';
+ const createMode=entryMode==='create';
  $('tabCreate')?.classList.toggle('active',createMode);$('tabJoin')?.classList.toggle('active',!createMode);
  $('createPane')?.classList.toggle('active',createMode);$('joinPane')?.classList.toggle('active',!createMode);
+ $('joinCodeWrap')?.classList.toggle('hidden',createMode);
+ if($('summaryIcon'))$('summaryIcon').textContent=createMode?'🎮':'👥';
+ if($('summaryAction'))$('summaryAction').textContent=createMode?'Crear una sala nueva':'Unirme a la sala '+($('joinCode')?.value||'');
+ if($('summaryDetail'))$('summaryDetail').textContent=createMode?'Como anfitrión podrás compartir el código con los jugadores.':`Entrarás como ${$('name')?.value.trim()||'jugador'} usando el código indicado.`;
 }
-const openEntry=(mode='create')=>{selectEntryMode(mode);const target=$('entrySection');target?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{const name=$('name');if(!name?.value)name?.focus();else $(mode==='join'?'joinCode':'name')?.focus()},550)};
+const openEntry=(mode='create')=>{
+ selectEntryMode(mode);$('entrySection')?.classList.add('open');setWizardStep(1);
+ setTimeout(()=>$('entrySection')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+};
 $('tabCreate')?.addEventListener('click',()=>selectEntryMode('create'));
 $('tabJoin')?.addEventListener('click',()=>selectEntryMode('join'));
+$('wizardContinue1')?.addEventListener('click',()=>setWizardStep(2));
+$('wizardBack1')?.addEventListener('click',()=>setWizardStep(1));
+$('wizardBack2')?.addEventListener('click',()=>setWizardStep(2));
+$('wizardContinue2')?.addEventListener('click',()=>{
+ const name=$('name')?.value.trim();if(!name)return toast('Escribe tu nombre o apodo');
+ if(entryMode==='join'&&!$('joinCode')?.value.trim())return toast('Escribe el código de sala');
+ selectEntryMode(entryMode);setWizardStep(3);
+});
 $('heroPlay')?.addEventListener('click',()=>openEntry('create'));
 $('heroJoin')?.addEventListener('click',()=>openEntry('join'));
 $('heroSound')?.addEventListener('click',()=>$('soundToggle')?.click());

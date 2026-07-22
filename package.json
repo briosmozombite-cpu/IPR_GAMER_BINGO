@@ -1,6 +1,6 @@
 {
   "name": "ipr-gamer-bingo",
-  "version": "5.2.2",
+  "version": "6.0.0",
   "private": true,
   "scripts": {
     "start": "node server.js"
