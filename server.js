@@ -131,7 +131,7 @@ function beginCountdown(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.0.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'5.1.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
@@ -223,7 +223,7 @@ const server=http.createServer(async(req,res)=>{
 });
 
 server.listen(PORT,HOST,()=>{
-  console.log(`\nIPR GAMER v5.0.0 activo en http://localhost:${PORT}`);
+  console.log(`\nIPR GAMER v5.1.0 activo en http://localhost:${PORT}`);
   for(const x of Object.values(os.networkInterfaces()).flat())if(x&&x.family==='IPv4'&&!x.internal)console.log(`Celulares: http://${x.address}:${PORT}`);
 });
 function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values())clearTimers(room);server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}

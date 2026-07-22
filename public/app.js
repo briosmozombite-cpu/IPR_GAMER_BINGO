@@ -86,3 +86,9 @@ $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('i
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)});
 window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnValue=''}});
 (async()=>{const profile=getProfile();$('homeBalance').textContent=Number(profile.balance??20).toFixed(2);if(profile.name)$('name').value=profile.name;const invited=new URLSearchParams(location.search).get('sala');const saved=JSON.parse(localStorage.getItem('iprGamerSession')||'null');if(invited){$('joinCode').value=invited.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);$('name').value='';if(saved?.room&&saved.room!==$('joinCode').value)clearSession();setTimeout(()=>$('name').focus(),100)}else if(saved?.name)$('name').value=saved.name;if(!invited&&saved?.room&&saved?.sessionToken){try{await enter(await api('/api/resume',{code:saved.room,sessionToken:saved.sessionToken},0));return}catch{clearSession()}}show('home')})();
+// Portada premium v5.1
+window.addEventListener('load',()=>setTimeout(()=>$('splash')?.classList.add('hide'),1450));
+const openEntry=(focusId='name')=>{const target=$('entrySection');target?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$((focusId))?.focus(),550)};
+$('heroPlay')?.addEventListener('click',()=>openEntry('name'));
+$('heroJoin')?.addEventListener('click',()=>openEntry('joinCode'));
+$('heroSound')?.addEventListener('click',()=>$('soundToggle')?.click());

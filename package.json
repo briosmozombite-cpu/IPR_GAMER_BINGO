@@ -1,6 +1,6 @@
 {
   "name": "ipr-gamer-bingo",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "private": true,
   "scripts": {
     "start": "node server.js"
@@ -8,5 +8,5 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "IPR GAMER Bingo v4.3: siguiente juego controlado y selector de cartillas renovado"
+  "description": "IPR GAMER Bingo v5.1: portada premium web, introducción animada y acceso visual mejorado"
 }
