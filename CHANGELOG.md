@@ -1,3 +1,12 @@
+# IPR GAMER BINGO v6.0.5 — Música audible
+
+- Se corrigió el volumen extremadamente bajo de la música sintetizada.
+- El volumen inicial de música sube a 35% y ahora puede ajustarse hasta 100%.
+- El botón “Probar ambiente” fuerza el desbloqueo de audio y eleva un volumen demasiado bajo.
+- El motor de audio vuelve a intentar desbloquearse con clic, toque o teclado.
+- Se conserva el control del locutor de la versión 6.0.4.
+- Caché y versión visual actualizadas a v6.0.5.
+
 # IPR GAMER BINGO v6.0.4 — Control del locutor
 
 - El locutor se detiene inmediatamente cuando un jugador vuelve al lobby o abandona la sala.
