@@ -1,12 +1,5 @@
 # CHANGELOG
 
-## v5.2.0
-- Inicio reorganizado: crear sala y unirse aparecen como opciones separadas.
-- Se eliminaron datos visuales redundantes de la portada.
-- Panel administrador con agregar, restar y reiniciar créditos por jugador.
-- Los ajustes de saldo se reflejan en tiempo real y quedan registrados.
-
-
 ## v5.1.0
 - Nueva portada premium inspirada en casino moderno.
 - Introducción animada al abrir la aplicación.
@@ -14,3 +7,10 @@
 - Diseño adaptable para computadora y celular.
 - Imagen optimizada WebP para una carga más rápida.
 - Se conserva toda la lógica multijugador de v5.0.
+
+
+## v5.2.1
+- Corrección de selección de jugador en el panel de créditos.
+- Ahora el jugador puede seleccionarse desde el desplegable o tocando directamente su fila.
+- La selección queda resaltada y no se pierde al actualizar el panel.
+- Se muestra claramente el jugador, sala y saldo seleccionados antes de ajustar créditos.

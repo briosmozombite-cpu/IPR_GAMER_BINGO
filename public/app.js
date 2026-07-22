@@ -80,18 +80,29 @@ $('leaveLobby').onclick=leaveRoomCompletely;$('leaveGame').onclick=()=>returnToR
 
 function openAdminModal(){$('adminModal').classList.add('show');$('adminModal').setAttribute('aria-hidden','false');document.body.style.overflow='hidden';setTimeout(()=>$('adminKey').focus(),80)}
 function closeAdminModal(){$('adminModal').classList.remove('show');$('adminModal').setAttribute('aria-hidden','true');document.body.style.overflow=''}
-let adminAccounts=[];
+let adminAccounts=[],selectedAdminPlayerId='';
+function selectAdminPlayer(id){
+ const account=adminAccounts.find(p=>p.id===id);if(!account)return;
+ selectedAdminPlayerId=id;
+ $('creditPlayer').value=id;
+ $('creditRoom').value=account.room;
+ document.querySelectorAll('.credit-player-row').forEach(row=>row.classList.toggle('selected',row.dataset.playerId===id));
+ $('selectedCreditPlayer').textContent=`Seleccionado: ${account.name} · Sala ${account.room} · ${Number(account.balance).toFixed(2)} créditos`;
+}
 function renderAdminAccounts(data){
  adminAccounts=data.playerAccounts||[];
+ const previous=selectedAdminPlayerId||$('creditPlayer').value;
  const roomFilter=$('creditRoom').value.trim().toUpperCase();
  const filtered=roomFilter?adminAccounts.filter(p=>p.room===roomFilter):adminAccounts;
  $('creditPlayer').innerHTML='<option value="">Selecciona un jugador</option>'+filtered.map(p=>`<option value="${p.id}" data-room="${p.room}">${escapeHtml(p.name)} · ${p.room} · ${Number(p.balance).toFixed(2)}</option>`).join('');
- $('creditPlayers').innerHTML=filtered.length?filtered.map(p=>`<div class="credit-player-row"><div><b>${p.host?'👑 ':''}${escapeHtml(p.name)}</b><small>Sala ${p.room} · ${p.online?'Conectado':'Desconectado'}</small></div><strong>${Number(p.balance).toFixed(2)} créditos</strong></div>`).join(''):'<div class="notice">No hay jugadores en esa sala.</div>';
+ $('creditPlayers').innerHTML=filtered.length?filtered.map(p=>`<button type="button" class="credit-player-row ${p.id===previous?'selected':''}" data-player-id="${p.id}"><div><b>${p.host?'👑 ':''}${escapeHtml(p.name)}</b><small>Sala ${p.room} · ${p.online?'Conectado':'Desconectado'}</small></div><strong>${Number(p.balance).toFixed(2)} créditos</strong></button>`).join(''):'<div class="notice">No hay jugadores en esa sala.</div>';
+ document.querySelectorAll('.credit-player-row[data-player-id]').forEach(row=>row.onclick=()=>selectAdminPlayer(row.dataset.playerId));
+ if(previous&&filtered.some(p=>p.id===previous))selectAdminPlayer(previous);else{selectedAdminPlayerId='';$('creditPlayer').value='';$('selectedCreditPlayer').textContent='Ningún jugador seleccionado';}
 }
 async function loadAdmin(){try{const key=$('adminKey').value.trim();if(!key)return toast('Escribe la clave');const data=await api('/api/admin',{key},0);$('adminRooms').textContent=data.activeRooms||0;$('adminPlayers').textContent=data.players||0;$('adminConnected').textContent=data.connected||0;$('adminGames').textContent=data.gamesStarted||0;$('adminEntries').textContent=Number(data.entryIncome||0).toFixed(2);$('adminCards').textContent=Number(data.cardIncome||0).toFixed(2);$('adminPrizes').textContent=Number(data.prizesPaid||0).toFixed(2);$('adminNet').textContent=Number(data.net||0).toFixed(2);$('adminHistory').innerHTML=(data.history||[]).length?(data.history||[]).map(m=>`<div class="history-row"><div><b>${escapeHtml(m.type)}</b><small>${escapeHtml(m.detail||'')} · ${formatDate(m.time)}</small></div><strong class="${Number(m.amount)>=0?'gain':'expense'}">${Number(m.amount)>=0?'+':''}${Number(m.amount).toFixed(2)}</strong></div>`).join(''):'<div class="notice">Aún no hay movimientos.</div>';renderAdminAccounts(data);$('adminContent').classList.remove('hidden');toast('Panel actualizado')}catch(e){toast(e.message)}}
 async function adjustCredits(action){
  try{
-  const key=$('adminKey').value.trim(),playerId=$('creditPlayer').value;
+  const key=$('adminKey').value.trim(),playerId=selectedAdminPlayerId||$('creditPlayer').value;
   const option=$('creditPlayer').selectedOptions[0],roomCode=(option?.dataset.room||$('creditRoom').value).trim().toUpperCase();
   if(!key)return toast('Escribe la clave de administrador');
   if(!roomCode)return toast('Escribe o selecciona una sala');
@@ -103,7 +114,7 @@ async function adjustCredits(action){
   await loadAdmin();
  }catch(e){toast(e.message)}
 }
-$('openAdmin').onclick=openAdminModal;$('closeAdmin').onclick=closeAdminModal;$('loadAdmin').onclick=loadAdmin;$('creditRoom').oninput=()=>renderAdminAccounts({playerAccounts:adminAccounts});$('creditPlayer').onchange=()=>{const o=$('creditPlayer').selectedOptions[0];if(o?.dataset.room)$('creditRoom').value=o.dataset.room};$('addCredits').onclick=()=>adjustCredits('add');$('removeCredits').onclick=()=>adjustCredits('remove');$('resetCredits').onclick=()=>adjustCredits('reset');$('adminKey').onkeydown=e=>{if(e.key==='Enter')loadAdmin()};$('adminModal').onclick=e=>{if(e.target===$('adminModal'))closeAdminModal()};
+$('openAdmin').onclick=openAdminModal;$('closeAdmin').onclick=closeAdminModal;$('loadAdmin').onclick=loadAdmin;$('creditRoom').oninput=()=>renderAdminAccounts({playerAccounts:adminAccounts});$('creditPlayer').onchange=()=>{const id=$('creditPlayer').value;if(id)selectAdminPlayer(id);else{selectedAdminPlayerId='';$('selectedCreditPlayer').textContent='Ningún jugador seleccionado'}};$('addCredits').onclick=()=>adjustCredits('add');$('removeCredits').onclick=()=>adjustCredits('remove');$('resetCredits').onclick=()=>adjustCredits('reset');$('adminKey').onkeydown=e=>{if(e.key==='Enter')loadAdmin()};$('adminModal').onclick=e=>{if(e.target===$('adminModal'))closeAdminModal()};
 $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('iprSound',soundEnabled?'on':'off');updateSoundButton();tone(soundEnabled?880:240,.14,'sine',.06);toast(soundEnabled?'Sonidos activados':'Sonidos desactivados')};updateSoundButton();
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5)});
 window.addEventListener('beforeunload',e=>{if(room){e.preventDefault();e.returnValue=''}});

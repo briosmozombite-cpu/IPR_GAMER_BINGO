@@ -44,7 +44,7 @@
 <div id="adminModal" class="modal" aria-hidden="true"><div class="modal-card admin-modal-card"><div class="modal-head"><div><h2>Panel IPR GAMER</h2><p>Información privada de la plataforma</p></div><button id="closeAdmin" class="icon">✕</button></div><div class="admin-login"><label>Clave de administrador<input id="adminKey" type="password" placeholder="Clave"></label><button id="loadAdmin" class="primary">Ingresar / Actualizar</button></div><div id="adminContent" class="admin-content hidden"><div class="admin-grid"><div class="stat-card"><span>Salas activas</span><strong id="adminRooms">0</strong></div><div class="stat-card"><span>Jugadores</span><strong id="adminPlayers">0</strong></div><div class="stat-card"><span>Conectados</span><strong id="adminConnected">0</strong></div><div class="stat-card"><span>Juegos</span><strong id="adminGames">0</strong></div><div class="stat-card"><span>Inscripciones</span><strong id="adminEntries">0.00</strong></div><div class="stat-card"><span>Cartillas</span><strong id="adminCards">0.00</strong></div><div class="stat-card"><span>Premios</span><strong id="adminPrizes">0.00</strong></div><div class="stat-card admin-profit"><span>Ganancia neta</span><strong id="adminNet">0.00</strong></div></div><h3>Gestión de créditos</h3>
 <div class="credit-admin-tools">
   <label>Sala<input id="creditRoom" maxlength="5" placeholder="ABCDE"></label>
-  <label>Jugador<select id="creditPlayer"><option value="">Selecciona un jugador</option></select></label>
+  <label>Jugador<select id="creditPlayer"><option value="">Selecciona un jugador</option></select><small id="selectedCreditPlayer" class="selected-credit-player">Ningún jugador seleccionado</small></label>
   <label>Monto<input id="creditAmount" type="number" min="0.01" step="0.01" value="10"></label>
   <div class="credit-actions">
     <button id="addCredits" class="success">+ Agregar</button>
@@ -54,4 +54,4 @@
 </div>
 <div id="creditPlayers" class="credit-player-list"></div>
 <h3>Movimientos</h3><div id="adminHistory" class="history-list"></div></div></div></div>
-<div id="countdown" class="countdown hidden"><div id="countdownNumber">3</div></div><div id="celebrationLayer" class="celebration-layer hidden"></div><div id="toast" class="toast"></div><script src="/app.js?v=5.2.0"></script></body></html>
+<div id="countdown" class="countdown hidden"><div id="countdownNumber">3</div></div><div id="celebrationLayer" class="celebration-layer hidden"></div><div id="toast" class="toast"></div><script src="/app.js?v=5.2.1"></script></body></html>
