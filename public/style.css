@@ -10,3 +10,19 @@ button:disabled{opacity:.65;cursor:wait;transform:none!important}
 .platform-wallet{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 14px;margin-bottom:16px;border:1px solid rgba(68,211,255,.28);border-radius:14px;background:rgba(18,43,78,.72)}
 .platform-wallet span{color:#9fb3ca}.platform-wallet strong{color:#fff;font-size:1.05rem}
 button.whatsapp{background:#25D366;color:#07140b;border-color:#25D366;font-weight:800}.invite-actions{flex-wrap:wrap}.invite-actions button{flex:1 1 180px}
+
+
+/* v4.1: historial y retorno individual al lobby */
+.history-panel{margin-top:16px;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(7,20,44,.9)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.stat-card{padding:14px;border:1px solid var(--line);border-radius:14px;background:#081832;display:flex;flex-direction:column;gap:6px}
+.stat-card span{color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.stat-card strong{font-size:22px}
+.history-list{max-height:310px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:#06142d}
+.history-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.history-row:last-child{border-bottom:0}
+.history-row div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.history-row small{color:var(--muted);white-space:normal}
+.history-row strong{font-size:18px;white-space:nowrap}
+.history-row .gain{color:#74efad}.history-row .expense{color:#ff9da1}
+@media(max-width:650px){.stats-grid{grid-template-columns:repeat(2,1fr)}.history-row{align-items:flex-start}.history-row strong{font-size:16px}}

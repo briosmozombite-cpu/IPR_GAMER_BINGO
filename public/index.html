@@ -12,7 +12,7 @@
 <header class="topbar">
   <div class="brand">
     <div class="logo">IPR</div>
-    <div><h1>IPR GAMER</h1><small>Bingo multijugador · Beta Familiar v3.4</small></div>
+    <div><h1>IPR GAMER</h1><small>Bingo multijugador · v4.1</small></div>
   </div>
   <div class="top-status"><div id="connection" class="status">Desconectado</div></div>
 </header>
@@ -61,6 +61,16 @@
     </div>
     <div class="card-block chat-card"><h3>Chat de sala</h3><div id="chatLobby" class="chat-list"></div><div class="chat-row"><input id="chatInputLobby" maxlength="180" placeholder="Escribe un mensaje"><button id="sendLobby">Enviar</button></div></div>
   </div>
+  <section class="history-panel">
+    <div class="section-title"><div><h3>Tu historial de ganancias</h3><p>Premios, compras y movimientos de tu saldo.</p></div></div>
+    <div class="stats-grid">
+      <div class="stat-card"><span>Juegos</span><strong id="statGames">0</strong></div>
+      <div class="stat-card"><span>Victorias</span><strong id="statWins">0</strong></div>
+      <div class="stat-card"><span>Ganado</span><strong><span id="statWon">0.00</span> cr.</strong></div>
+      <div class="stat-card"><span>Gastado</span><strong><span id="statSpent">0.00</span> cr.</strong></div>
+    </div>
+    <div id="playerHistory" class="history-list"></div>
+  </section>
 </section>
 
 <section id="game" class="view panel game-panel">
@@ -83,7 +93,7 @@
   <button id="leaveGame" class="danger ghost wide">Abandonar partida y volver al lobby</button>
 </section>
 
-<section id="result" class="view panel result center"><div class="trophy">🏆</div><h2>Resultado</h2><div id="winner" class="winner">—</div><button id="next" class="success hidden">Siguiente juego</button><button id="leaveResult" class="primary">Volver al lobby de la sala</button></section>
+<section id="result" class="view panel result center"><div class="trophy">🏆</div><h2>Resultado</h2><div id="winner" class="winner">—</div><button id="next" class="success hidden">Siguiente juego</button><button id="leaveResult" class="primary">Volver al lobby de la sala</button><p class="small-note">Cada jugador puede volver al lobby sin esperar al anfitrión.</p></section>
 </main>
 </div>
 <div id="cardsModal" class="modal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><h2>Elige tus cartillas</h2><p>Mínimo 2, máximo 8</p></div><button id="closeCards" class="icon">✕</button></div><div id="cardPicker" class="card-picker"></div><div class="modal-foot"><strong>Seleccionadas: <span id="selectedCount">0</span></strong><button id="confirmCards" class="primary">Confirmar cartillas</button></div></div></div>

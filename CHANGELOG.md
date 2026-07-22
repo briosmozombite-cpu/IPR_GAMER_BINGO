@@ -1,3 +1,11 @@
+# CHANGELOG
+
+## v4.1.0
+- Cada jugador puede volver al lobby inmediatamente después de terminar una partida.
+- El jugador invitado también tiene disponible la opción de volver al lobby.
+- Se restauró el historial personal de ganancias, gastos y movimientos.
+- Se añadieron estadísticas de juegos, victorias, créditos ganados y gastados.
+
 # Registro de cambios
 
 ## v4.0.0
