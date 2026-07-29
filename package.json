@@ -1,6 +1,6 @@
 {
   "name": "ipr-gamer-bingo",
-  "version": "6.1.1",
+  "version": "6.2.0",
   "private": true,
   "scripts": {
     "start": "node server.js"
@@ -8,5 +8,5 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "IPR GAMER Bingo v6.1.1: versión familiar con 100 cartillas, temporizador, limpieza de inactivos, pozo y PWA"
+  "description": "IPR GAMER Bingo v6.2.0: estabilidad, confirmación al abandonar y retorno seguro a la partida"
 }

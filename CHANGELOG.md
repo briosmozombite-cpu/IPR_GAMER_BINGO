@@ -1,3 +1,11 @@
+# IPR GAMER BINGO v6.2.0 – Estabilidad y retorno seguro
+
+- Confirmación visual obligatoria antes de salir completamente de la sala.
+- Mensaje reforzado cuando la partida ya comenzó.
+- Volver al lobby conserva cartillas y participación.
+- Botón para regresar a la partida en curso.
+- Actualización del caché PWA para evitar archivos antiguos.
+
 # IPR GAMER BINGO v6.1.1 – Don Bolo y Emojis Flotantes
 
 - Don Bolo aparece visualmente en el lobby y durante la partida.

@@ -157,7 +157,7 @@ function cleanupRoom(room){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'6.1.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'6.2.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
@@ -223,7 +223,7 @@ const server=http.createServer(async(req,res)=>{
           if(extra){p.balance=money(p.balance-extra);p.cardCreditsPaid+=extra;p.stats.spent=money(p.stats.spent+extra);addPlayerMove(p,'Compra de cartillas',-extra,`${extra} cartilla(s)`);const platform=money(extra*room.state.platformRate),jack=money(extra*0.10),pot=money(extra-platform-jack);room.state.gamePot=money(room.state.gamePot+pot);room.state.apagonJackpot=money(room.state.apagonJackpot+jack);room.state.appFinance.cardIncome=money(room.state.appFinance.cardIncome+platform);appTotals.cardIncome=money(appTotals.cardIncome+platform);addAppMove(room,'Comisión por cartillas',platform,p.name);recalc(room)}
           p.cardIds=ids;p.ready=true;p.inGameView=true;broadcast(room);break;
         }
-        case 'setView':p.inGameView=Boolean(b.inGameView);broadcast(room);break;
+        case 'setView':{const wantsGame=Boolean(b.inGameView);if(wantsGame&&(room.state.phase==='countdown'||room.state.phase==='playing')&&(!p.ready||p.cardIds.length<2))return sendJson(res,409,{error:'No tienes cartillas confirmadas para volver a esta partida'});p.inGameView=wantsGame;broadcast(room);break;}
         case 'start':{
           if(room.state.phase!=='lobby')return sendJson(res,409,{error:'El juego ya está iniciando'});
           const eligible=eligiblePlayers(room).filter(x=>x.online&&x.ready&&x.cardIds.length>=2);if(!eligible.length)return sendJson(res,409,{error:'Debe existir al menos un jugador con 2 cartillas confirmadas'});
@@ -247,9 +247,7 @@ const server=http.createServer(async(req,res)=>{
           // pero deja de participar en la partida actual y vuelve al lobby de la sala.
           p.inGameView=false;
           if(room.state.phase==='countdown'||room.state.phase==='playing'){
-            p.ready=false;p.cardIds=[];p.cardCreditsPaid=0;p.apagonQualified=false;
-            p.disqualificationReason='Abandonó la partida';
-            room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:`${p.name} volvió al lobby y dejó la partida`,time:Date.now()});
+            room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:`${p.name} volvió temporalmente al lobby`,time:Date.now()});
             room.state.chat=room.state.chat.slice(-60);
           }
           broadcast(room);break;
