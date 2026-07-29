@@ -1,3 +1,11 @@
+# IPR GAMER BINGO v6.1.1 – Don Bolo y Emojis Flotantes
+
+- Don Bolo aparece visualmente en el lobby y durante la partida.
+- Se mantiene como maestro de ceremonias y locutor de bolillas.
+- Los emojis ahora flotan por toda la pantalla en tiempo real.
+- Se agregaron reacciones también antes de iniciar la partida.
+- Cada reacción muestra el emoji y el nombre del jugador.
+
 # IPR GAMER BINGO v6.1.0 — Prueba Familiar
 
 - Se amplió el selector a 100 cartillas.

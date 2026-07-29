@@ -45,7 +45,18 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function save(){localStorage.setItem('iprGamerSession',JSON.stringify({room,sessionToken,name:$('name').value.trim()}));saveProfile()}
 function clearSession(){localStorage.removeItem('iprGamerSession')}
 async function resumeConnection(){if(resumeInProgress||!room||!sessionToken||!navigator.onLine)return;resumeInProgress=true;try{const data=await api('/api/resume',{code:room,sessionToken},0);playerId=data.playerId;state=data.state;save();connect();render()}catch{}finally{resumeInProgress=false}}
-function connect(){clearTimeout(reconnectTimer);if(events)events.close();$('connection').textContent='Conectando…';$('connection').classList.remove('online');events=new EventSource(`/api/events?code=${encodeURIComponent(room)}&playerId=${encodeURIComponent(playerId)}`);events.addEventListener('open',()=>{$('connection').textContent='Conectado';$('connection').classList.add('online')});events.addEventListener('state',e=>{state=JSON.parse(e.data);$('connection').textContent='Conectado';$('connection').classList.add('online');render()});events.addEventListener('celebration',e=>{const d=JSON.parse(e.data);showCelebration(d)});events.onerror=()=>{$('connection').textContent=navigator.onLine?'Reconectando…':'Sin internet';$('connection').classList.remove('online');clearTimeout(reconnectTimer);reconnectTimer=setTimeout(resumeConnection,3500)}}
+
+function showFloatingReaction(d={}){
+ const layer=document.createElement('div');
+ layer.className='floating-reaction';
+ layer.style.left=`${8+Math.random()*78}%`;
+ layer.style.setProperty('--drift',`${-80+Math.random()*160}px`);
+ layer.innerHTML=`<span>${escapeHtml(d.emoji||'🎉')}</span><small>${escapeHtml(d.name||'')}</small>`;
+ document.body.appendChild(layer);
+ setTimeout(()=>layer.remove(),2600);
+}
+
+function connect(){clearTimeout(reconnectTimer);if(events)events.close();$('connection').textContent='Conectando…';$('connection').classList.remove('online');events=new EventSource(`/api/events?code=${encodeURIComponent(room)}&playerId=${encodeURIComponent(playerId)}`);events.addEventListener('open',()=>{$('connection').textContent='Conectado';$('connection').classList.add('online')});events.addEventListener('state',e=>{state=JSON.parse(e.data);$('connection').textContent='Conectado';$('connection').classList.add('online');render()});events.addEventListener('celebration',e=>{const d=JSON.parse(e.data);showCelebration(d)});events.addEventListener('reaction',e=>{const d=JSON.parse(e.data);showFloatingReaction(d);tone(860,.09,'sine',.04)});events.onerror=()=>{$('connection').textContent=navigator.onLine?'Reconectando…':'Sin internet';$('connection').classList.remove('online');clearTimeout(reconnectTimer);reconnectTimer=setTimeout(resumeConnection,3500)}}
 window.addEventListener('online',()=>{if(room){$('connection').textContent='Reconectando…';resumeConnection()}});window.addEventListener('offline',()=>{stopNarration(false);$('connection').textContent='Sin internet';$('connection').classList.remove('online')});
 async function enter(data){room=data.code;playerId=data.playerId;sessionToken=data.sessionToken;state=data.state;save();connect();requestWakeLock();render()}
 function inviteUrl(){
