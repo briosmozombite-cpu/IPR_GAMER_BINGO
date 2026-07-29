@@ -1,6 +1,6 @@
 {
   "name": "ipr-gamer-bingo",
-  "version": "6.2.0",
+  "version": "6.2.1",
   "private": true,
   "scripts": {
     "start": "node server.js"
@@ -8,5 +8,5 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "IPR GAMER Bingo v6.2.0: estabilidad, confirmación al abandonar y retorno seguro a la partida"
+  "description": "IPR GAMER Bingo v6.2.1: salida definitiva corregida y retorno opcional al lobby"
 }

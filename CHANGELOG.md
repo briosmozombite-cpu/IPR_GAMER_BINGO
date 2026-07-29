@@ -1,3 +1,10 @@
+# IPR GAMER BINGO v6.2.1 — Salida corregida
+
+- El botón **Salir completamente de la sala** ahora elimina al jugador de la sala y regresa a la portada.
+- Se agregó un botón separado **Volver al lobby sin salir** para conservar cartillas y participación.
+- Ambos comportamientos muestran una confirmación clara antes de ejecutarse.
+- Se actualizó el caché PWA para evitar cargar la versión anterior.
+
 # IPR GAMER BINGO v6.2.0 – Estabilidad y retorno seguro
 
 - Confirmación visual obligatoria antes de salir completamente de la sala.
