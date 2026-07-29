@@ -1,3 +1,18 @@
+# IPR GAMER BINGO v6.1.0 — Prueba Familiar
+
+- Se amplió el selector a 100 cartillas.
+- Temporizador visible de 90 segundos para escoger cartillas.
+- Los jugadores sin confirmar ya no bloquean el inicio.
+- Limpieza automática de jugadores inactivos en el lobby.
+- Reconexión conservada para llamadas o cortes breves de internet.
+- Lista de conectados/desconectados más clara.
+- Indicador visible de Bingo normal y APAGÓN.
+- Pozo visible; 70% de cartillas al pozo normal, 10% al APAGÓN y 20% de comisión de plataforma.
+- Don Bolo identificado como maestro de ceremonias y locutor.
+- Confirmación de cartillas reforzada para Safari/iPhone.
+- Aplicación instalable como PWA en Android y acceso directo en iPhone.
+- Se mantienen música audible, chat, emojis, marcado automático, historial y administración.
+
 # IPR GAMER BINGO v6.0.5 — Música audible
 
 - Se corrigió el volumen extremadamente bajo de la música sintetizada.

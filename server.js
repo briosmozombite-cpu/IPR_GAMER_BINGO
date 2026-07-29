@@ -78,7 +78,7 @@ function chargeEntry(room,p){
 }
 function newPlayer(name,host,startingBalance=20){
   const safeBalance=Math.max(0,Math.min(100000,money(startingBalance||20)));
-  return {id:crypto.randomUUID(),sessionToken:crypto.randomUUID(),name:String(name||'Jugador').trim().slice(0,24),host,online:true,ready:false,inGameView:false,cardIds:[],balance:safeBalance,cardCreditsPaid:0,apagonQualified:true,qualifyingGames:0,disqualificationReason:'',history:[],stats:{games:0,wins:0,apagones:0,spent:0,won:0}};
+  return {id:crypto.randomUUID(),sessionToken:crypto.randomUUID(),name:String(name||'Jugador').trim().slice(0,24),host,online:true,lastSeen:Date.now(),ready:false,inGameView:false,cardIds:[],balance:safeBalance,cardCreditsPaid:0,apagonQualified:true,qualifyingGames:0,disqualificationReason:'',history:[],stats:{games:0,wins:0,apagones:0,spent:0,won:0}};
 }
 function publicState(room,viewerId){
   const taken={};for(const p of room.state.players)for(const id of p.cardIds||[])taken[id]=p.id;
@@ -92,14 +92,14 @@ function emit(room,event,data){for(const res of room.clients.values())emitOne(re
 function clearTimers(room){clearInterval(room.timer);clearTimeout(room.countdownTimer);room.timer=null;room.countdownTimer=null}
 function award(room,p,automatic=true){
   if(room.state.rewardApplied)return false;
-  const apagon=isApagon(room),prize=apagon?money(room.state.apagonJackpot):3;
+  const apagon=isApagon(room),prize=apagon?money(room.state.apagonJackpot+room.state.gamePot):money(room.state.gamePot);
   clearTimers(room);room.state.phase='finished';room.state.winner=p.name;room.state.winnerId=p.id;room.state.auto=false;room.state.rewardApplied=true;
   p.balance=money(p.balance+prize);p.stats.wins++;p.stats.won=money(p.stats.won+prize);if(apagon)p.stats.apagones++;
   addPlayerMove(p,apagon?'Premio APAGÓN':'Premio de bingo',prize,`Sala ${room.state.code} · Juego ${room.state.gameInCycle}`);
   room.state.appFinance.prizesPaid=money(room.state.appFinance.prizesPaid+prize);appTotals.prizesPaid=money(appTotals.prizesPaid+prize);addAppMove(room,'Premio pagado',-prize,p.name);recalc(room);
   const winItem={id:crypto.randomUUID(),name:p.name,prize,apagon,game:room.state.gameInCycle,time:Date.now()};
   room.state.lastWinners.unshift(winItem);room.state.lastWinners=room.state.lastWinners.slice(0,10);appTotals.winners.unshift({...winItem,room:room.state.code});appTotals.winners=appTotals.winners.slice(0,50);
-  room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:apagon?`🔥 ${p.name} ganó el APAGÓN: ${prize.toFixed(2)} créditos`:`🏆 ${p.name} hizo BINGO y ganó 3 créditos`,time:Date.now()});
+  room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:apagon?`🔥 ${p.name} ganó el APAGÓN: ${prize.toFixed(2)} créditos`:`🏆 ${p.name} hizo BINGO y ganó ${prize.toFixed(2)} créditos`,time:Date.now()});
   broadcast(room);emit(room,'celebration',{name:p.name,prize,apagon,automatic});return true;
 }
 function checkWinner(room){
@@ -131,10 +131,33 @@ function beginCountdown(room){
   },4000);
 }
 
+
+function cleanupRoom(room){
+  const now=Date.now();
+  for(const p of room.state.players){
+    if(p.online) p.lastSeen=now;
+  }
+  if(room.state.phase==='lobby'){
+    const expired=now>Number(room.state.selectionEndsAt||0);
+    const removed=[];
+    room.state.players=room.state.players.filter(p=>{
+      if(p.host)return true;
+      const inactive=!p.online&&now-Number(p.lastSeen||0)>120000;
+      const noCards=expired&&!p.ready;
+      if(inactive||noCards){removed.push(p.name);room.clients.get(p.id)?.end();room.clients.delete(p.id);return false}
+      return true;
+    });
+    if(removed.length)room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:`Se retiró por inactividad: ${removed.join(', ')}`,time:Date.now()});
+  }
+  if(!room.state.players.length){clearTimers(room);clearInterval(room.cleanupTimer);rooms.delete(room.state.code);return}
+  if(!room.state.players.some(p=>p.host)){room.state.players[0].host=true;room.hostId=room.state.players[0].id}
+  broadcast(room);
+}
+
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,`http://${req.headers.host}`);
   try{
-    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'6.0.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
+    if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,service:'IPR GAMER Bingo',version:'6.1.0',rooms:rooms.size,uptime:Math.floor(process.uptime())});
     if(req.method==='POST'&&url.pathname==='/api/admin'){
       const b=await readBody(req);if(String(b.key||'')!==ADMIN_KEY)return sendJson(res,403,{error:'Clave de administrador incorrecta'});
       return sendJson(res,200,adminSnapshot());
@@ -165,47 +188,46 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==='POST'&&url.pathname==='/api/create'){
       const b=await readBody(req),name=String(b.name||'').trim();if(!name)return sendJson(res,400,{error:'Escribe tu nombre'});
       const code=roomCode(),p=newPlayer(name,true,b.startingBalance);
-      const room={hostId:p.id,clients:new Map(),timer:null,countdownTimer:null,state:{code,phase:'lobby',round:1,cycle:1,gameInCycle:1,apagonJackpot:0,minCardsForApagon:2,drawn:[],current:null,lastDrawAt:null,countdownEndsAt:null,winner:null,winnerId:null,rewardApplied:false,auto:false,speed:6,players:[p],chat:[],lastWinners:[],appFinance:{entryIncome:0,cardIncome:0,prizesPaid:0,net:0,history:[]}}};
-      chargeEntry(room,p);rooms.set(code,room);return sendJson(res,200,{code,playerId:p.id,sessionToken:p.sessionToken,state:publicState(room,p.id)});
+      const room={hostId:p.id,clients:new Map(),timer:null,countdownTimer:null,cleanupTimer:null,state:{code,phase:'lobby',round:1,cycle:1,gameInCycle:1,apagonJackpot:0,gamePot:0,platformRate:0.20,minCardsForApagon:2,selectionEndsAt:Date.now()+90000,drawn:[],current:null,lastDrawAt:null,countdownEndsAt:null,winner:null,winnerId:null,rewardApplied:false,auto:false,speed:6,players:[p],chat:[],lastWinners:[],appFinance:{entryIncome:0,cardIncome:0,prizesPaid:0,net:0,history:[]}}};
+      chargeEntry(room,p);room.cleanupTimer=setInterval(()=>cleanupRoom(room),30000);rooms.set(code,room);return sendJson(res,200,{code,playerId:p.id,sessionToken:p.sessionToken,state:publicState(room,p.id)});
     }
     if(req.method==='POST'&&url.pathname==='/api/join'){
       const b=await readBody(req),code=String(b.code||'').toUpperCase().trim(),room=rooms.get(code),name=String(b.name||'').trim();
       if(!name)return sendJson(res,400,{error:'Escribe tu nombre'});if(!room)return sendJson(res,404,{error:'Sala no encontrada'});
-      const saved=room.state.players.find(x=>x.sessionToken===b.sessionToken);if(saved){saved.online=true;broadcast(room);return sendJson(res,200,{code,playerId:saved.id,sessionToken:saved.sessionToken,state:publicState(room,saved.id)})}
+      const saved=room.state.players.find(x=>x.sessionToken===b.sessionToken);if(saved){saved.online=true;saved.lastSeen=Date.now();broadcast(room);return sendJson(res,200,{code,playerId:saved.id,sessionToken:saved.sessionToken,state:publicState(room,saved.id)})}
       if(room.state.phase!=='lobby')return sendJson(res,409,{error:'La partida ya comenzó'});
       const p=newPlayer(name,false,b.startingBalance);room.state.players.push(p);chargeEntry(room,p);room.state.chat.push({id:crypto.randomUUID(),kind:'system',name:'Sistema',text:`${p.name} entró a la sala`,time:Date.now()});broadcast(room);
       return sendJson(res,200,{code,playerId:p.id,sessionToken:p.sessionToken,state:publicState(room,p.id)});
     }
     if(req.method==='POST'&&url.pathname==='/api/resume'){
       const b=await readBody(req),room=rooms.get(String(b.code||'').toUpperCase()),p=room?.state.players.find(x=>x.sessionToken===b.sessionToken);
-      if(!room||!p)return sendJson(res,404,{error:'Partida no disponible'});p.online=true;return sendJson(res,200,{code:room.state.code,playerId:p.id,sessionToken:p.sessionToken,state:publicState(room,p.id)});
+      if(!room||!p)return sendJson(res,404,{error:'Partida no disponible'});p.online=true;p.lastSeen=Date.now();return sendJson(res,200,{code:room.state.code,playerId:p.id,sessionToken:p.sessionToken,state:publicState(room,p.id)});
     }
     if(req.method==='GET'&&url.pathname==='/api/events'){
       const code=String(url.searchParams.get('code')||'').toUpperCase(),id=String(url.searchParams.get('playerId')||''),room=rooms.get(code),p=room?.state.players.find(x=>x.id===id);
       if(!room||!p){res.writeHead(404);return res.end()}
-      res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive'});room.clients.set(id,res);p.online=true;emitOne(res,'state',publicState(room,id));broadcast(room);
-      const ping=setInterval(()=>{try{res.write(':ping\n\n')}catch{}},20000);req.on('close',()=>{clearInterval(ping);room.clients.delete(id);p.online=false;broadcast(room)});return;
+      res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive'});room.clients.set(id,res);p.online=true;p.lastSeen=Date.now();emitOne(res,'state',publicState(room,id));broadcast(room);
+      const ping=setInterval(()=>{try{res.write(':ping\n\n')}catch{}},20000);req.on('close',()=>{clearInterval(ping);room.clients.delete(id);p.online=false;p.lastSeen=Date.now();broadcast(room)});return;
     }
     if(req.method==='POST'&&url.pathname==='/api/action'){
       const b=await readBody(req),room=rooms.get(String(b.code||'').toUpperCase()),p=room?.state.players.find(x=>x.id===b.playerId);
-      if(!room||!p)return sendJson(res,404,{error:'Jugador no válido'});
+      if(!room||!p)return sendJson(res,404,{error:'Jugador no válido'});p.lastSeen=Date.now();
       if(['start','draw','auto','reset','settings'].includes(b.type)&&!p.host)return sendJson(res,403,{error:'Solo el anfitrión puede hacer eso'});
       switch(b.type){
         case 'chooseCards':{
           if(room.state.phase==='finished')return sendJson(res,409,{error:'El anfitrión debe presionar Siguiente juego antes de elegir nuevas cartillas'});
           if(room.state.phase!=='lobby')return sendJson(res,409,{error:'La partida ya comenzó'});
-          const ids=[...new Set((b.cardIds||[]).map(Number))].filter(x=>x>=1&&x<=20).slice(0,8);if(ids.length<2)return sendJson(res,400,{error:'Debes elegir mínimo 2 cartillas'});
+          const ids=[...new Set((b.cardIds||[]).map(Number))].filter(x=>x>=1&&x<=100).slice(0,8);if(ids.length<2)return sendJson(res,400,{error:'Debes elegir mínimo 2 cartillas'});
           for(const other of room.state.players)if(other.id!==p.id&&ids.some(id=>other.cardIds.includes(id)))return sendJson(res,409,{error:'Una cartilla ya fue elegida'});
           const extra=Math.max(0,ids.length-p.cardCreditsPaid);if(p.balance<extra)return sendJson(res,409,{error:`Saldo insuficiente: necesitas ${extra} crédito(s)`});
-          if(extra){p.balance=money(p.balance-extra);p.cardCreditsPaid+=extra;p.stats.spent=money(p.stats.spent+extra);addPlayerMove(p,'Compra de cartillas',-extra,`${extra} cartilla(s)`);const jack=money(extra*0.20),platform=money(extra-jack);room.state.apagonJackpot=money(room.state.apagonJackpot+jack);room.state.appFinance.cardIncome=money(room.state.appFinance.cardIncome+platform);appTotals.cardIncome=money(appTotals.cardIncome+platform);addAppMove(room,'Venta de cartillas',platform,p.name);recalc(room)}
+          if(extra){p.balance=money(p.balance-extra);p.cardCreditsPaid+=extra;p.stats.spent=money(p.stats.spent+extra);addPlayerMove(p,'Compra de cartillas',-extra,`${extra} cartilla(s)`);const platform=money(extra*room.state.platformRate),jack=money(extra*0.10),pot=money(extra-platform-jack);room.state.gamePot=money(room.state.gamePot+pot);room.state.apagonJackpot=money(room.state.apagonJackpot+jack);room.state.appFinance.cardIncome=money(room.state.appFinance.cardIncome+platform);appTotals.cardIncome=money(appTotals.cardIncome+platform);addAppMove(room,'Comisión por cartillas',platform,p.name);recalc(room)}
           p.cardIds=ids;p.ready=true;p.inGameView=true;broadcast(room);break;
         }
         case 'setView':p.inGameView=Boolean(b.inGameView);broadcast(room);break;
         case 'start':{
           if(room.state.phase!=='lobby')return sendJson(res,409,{error:'El juego ya está iniciando'});
-          const eligible=eligiblePlayers(room);if(!eligible.length||eligible.some(x=>x.cardIds.length<2))return sendJson(res,409,{error:'Todos deben confirmar mínimo 2 cartillas'});
-          // Al iniciar, todos los jugadores listos —incluido el anfitrión— entran a la mesa.
-          for(const x of eligible){x.ready=true;x.inGameView=true}
+          const eligible=eligiblePlayers(room).filter(x=>x.online&&x.ready&&x.cardIds.length>=2);if(!eligible.length)return sendJson(res,409,{error:'Debe existir al menos un jugador con 2 cartillas confirmadas'});
+          for(const x of room.state.players){x.inGameView=eligible.some(e=>e.id===x.id);if(!x.inGameView&&x.cardIds.length<2){x.ready=false;x.disqualificationReason='No confirmó cartillas a tiempo'}}
           beginCountdown(room);break;
         }
         case 'draw':draw(room);break;
@@ -215,7 +237,7 @@ const server=http.createServer(async(req,res)=>{
           if(room.state.phase!=='finished')return sendJson(res,409,{error:'El juego todavía no terminó'});
           if(!isApagon(room)){for(const x of room.state.players){if(x.cardIds.length>=2&&x.apagonQualified)x.qualifyingGames++;else{x.apagonQualified=false;x.disqualificationReason='Jugó menos de 2 cartillas'}}room.state.gameInCycle++;}
           else{room.state.cycle++;room.state.gameInCycle=1;room.state.apagonJackpot=0;for(const x of room.state.players){x.apagonQualified=true;x.qualifyingGames=0;x.disqualificationReason=''}}
-          clearTimers(room);room.state.phase='lobby';room.state.round++;room.state.drawn=[];room.state.current=null;room.state.countdownEndsAt=null;room.state.winner=null;room.state.winnerId=null;room.state.lastDrawAt=null;room.state.rewardApplied=false;room.state.auto=false;
+          clearTimers(room);room.state.phase='lobby';room.state.round++;room.state.selectionEndsAt=Date.now()+90000;room.state.gamePot=0;room.state.drawn=[];room.state.current=null;room.state.countdownEndsAt=null;room.state.winner=null;room.state.winnerId=null;room.state.lastDrawAt=null;room.state.rewardApplied=false;room.state.auto=false;
           for(const x of room.state.players){/* Conserva las cartillas del juego anterior como selección inicial. */x.ready=false;x.inGameView=false;x.cardCreditsPaid=0}broadcast(room);break;
         }
         case 'chat':{const text=String(b.text||'').trim().slice(0,180);if(!text)return sendJson(res,400,{error:'Escribe un mensaje'});room.state.chat.push({id:crypto.randomUUID(),kind:'user',name:p.name,text,time:Date.now()});room.state.chat=room.state.chat.slice(-60);broadcast(room);break}
@@ -234,7 +256,7 @@ const server=http.createServer(async(req,res)=>{
         }
         case 'abandon':{
           room.clients.get(p.id)?.end();room.clients.delete(p.id);room.state.players=room.state.players.filter(x=>x.id!==p.id);
-          if(!room.state.players.length){clearTimers(room);rooms.delete(room.state.code);return sendJson(res,200,{ok:true,roomClosed:true,balance:p.balance,name:p.name})}
+          if(!room.state.players.length){clearTimers(room);clearInterval(room.cleanupTimer);rooms.delete(room.state.code);return sendJson(res,200,{ok:true,roomClosed:true,balance:p.balance,name:p.name})}
           if(p.host){room.state.players[0].host=true;room.hostId=room.state.players[0].id}broadcast(room);return sendJson(res,200,{ok:true,balance:p.balance,name:p.name});
         }
         default:return sendJson(res,400,{error:'Acción desconocida'});
@@ -249,8 +271,8 @@ const server=http.createServer(async(req,res)=>{
 });
 
 server.listen(PORT,HOST,()=>{
-  console.log(`\nIPR GAMER v5.2.0 activo en http://localhost:${PORT}`);
+  console.log(`\nIPR GAMER v6.1.0 FAMILIA activo en http://localhost:${PORT}`);
   for(const x of Object.values(os.networkInterfaces()).flat())if(x&&x.family==='IPv4'&&!x.internal)console.log(`Celulares: http://${x.address}:${PORT}`);
 });
-function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values())clearTimers(room);server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}
+function shutdown(signal){console.log(`\n${signal}: cerrando IPR GAMER...`);for(const room of rooms.values()){clearTimers(room);clearInterval(room.cleanupTimer)}server.close(()=>process.exit(0));setTimeout(()=>process.exit(1),5000).unref()}
 process.on('SIGTERM',()=>shutdown('SIGTERM'));process.on('SIGINT',()=>shutdown('SIGINT'));
